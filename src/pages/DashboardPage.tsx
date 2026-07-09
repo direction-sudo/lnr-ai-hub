@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Routes, Route, Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Home, Bot, MessageSquare, Plus, Search,
-  MoreVertical, Send, Paperclip, ChevronLeft,
-  ChevronRight, Menu, Sparkles, Star, Wand2,
-  Users, Instagram,
-  PenTool, Target, BarChart3
+  Send, Paperclip, ChevronLeft, Sparkles, Star, Wand2,
+  Users, Instagram, PenTool, Target, BarChart3,
+  Menu, ChevronRight
 } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
+import type { Message } from '@/types';
 
 const ALL_AVATARS = [
   '/images/avatar-nora.png',
@@ -22,7 +22,7 @@ const CAP_OPTIONS = ['Rédaction', 'Visuels', 'Analytics', 'Community Mgmt', 'Re
 /* ═══════════ SIDEBAR ═══════════ */
 function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   const location = useLocation();
-  const { agents } = useChat();
+  const { agents, isLoading } = useChat();
   const navigate = useNavigate();
 
   const navItems = [
@@ -32,6 +32,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
   ];
 
   const defaultAgents = agents.filter(a => a.isDefault === 'true');
+  const customAgents = agents.filter(a => a.isDefault === 'false');
 
   return (
     <>
@@ -40,19 +41,19 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
         className={`fixed lg:sticky top-0 left-0 h-screen w-[260px] flex-shrink-0 z-50 flex flex-col transition-transform duration-300 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
-        style={{ background: 'rgba(17,17,19,0.95)', borderRight: '1px solid rgba(255,255,255,0.06)' }}
+        style={{ background: 'rgba(13,13,15,0.97)', borderRight: '1px solid rgba(255,255,255,0.04)' }}
       >
         <div className="p-4">
-          <Link to="/" className="flex items-center gap-2 mb-5">
-            <span className="text-lg font-extrabold text-[#D4A853]" style={{ fontFamily: 'var(--font-heading)' }}>LNR</span>
+          <Link to="/" className="flex items-center gap-2 mb-5 group">
+            <span className="text-lg font-extrabold text-[#D4A853] group-hover:gold-glow-text transition-all" style={{ fontFamily: 'var(--font-heading)' }}>LNR</span>
             <span className="text-sm font-medium text-[#FAFAFA]">AI HUB</span>
           </Link>
 
           <button
             onClick={() => { navigate('/dashboard/create'); onClose(); }}
-            className="w-full gold-gradient text-[#0A0A0B] font-semibold h-10 rounded-xl flex items-center justify-center gap-2 hover:brightness-110 transition-all mb-5 text-sm"
+            className="w-full btn-gold h-10 rounded-xl flex items-center justify-center gap-2 text-sm mb-5"
           >
-            <Plus size={15} /> Créer un agent
+            <span className="relative z-10 flex items-center gap-2"><Plus size={15} /> Créer un agent</span>
           </button>
 
           <nav className="space-y-0.5">
@@ -61,8 +62,10 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
               const Icon = item.icon;
               return (
                 <Link key={item.path} to={item.path} onClick={onClose}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                    isActive ? 'bg-[rgba(212,168,83,0.1)] text-[#D4A853] border-l-[3px] border-l-[#D4A853]' : 'text-[#A1A1AA] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#FAFAFA]'
+                  className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.12)]'
+                      : 'text-[#52525B] hover:text-[#A1A1AA] hover:bg-[rgba(255,255,255,0.02)]'
                   }`}
                 >
                   <Icon size={17} /> {item.label}
@@ -72,33 +75,50 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
           </nav>
         </div>
 
-        <div className="mt-auto p-4 border-t border-white/5">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-[#52525B] mb-2">Agents</p>
-          <div className="space-y-0.5">
+        <div className="mt-auto p-4 border-t border-white/[0.04]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#3F3F46] mb-2.5">Agents par défaut</p>
+          <div className="space-y-0.5 mb-3">
             {defaultAgents.map(agent => (
               <button key={agent.id}
                 onClick={() => { navigate(`/dashboard/chat/${agent.id}`); onClose(); }}
-                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-[rgba(255,255,255,0.04)] transition-colors text-left ${
-                  location.pathname.includes(`/chat/${agent.id}`) ? 'bg-[rgba(212,168,83,0.08)]' : ''
+                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition-all duration-200 text-left ${
+                  location.pathname.includes(`/chat/${agent.id}`) ? 'bg-[rgba(212,168,83,0.06)]' : 'hover:bg-[rgba(255,255,255,0.02)]'
                 }`}
               >
                 <div className="relative flex-shrink-0">
-                  <img src={agent.avatar || '/images/avatar-placeholder-1.png'} alt={agent.name} className="w-7 h-7 rounded-full object-cover" />
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-[#22C55E] rounded-full ring-2 ring-[#111113]" />
+                  <img src={agent.avatar || '/images/avatar-placeholder-1.png'} alt={agent.name} className="w-8 h-8 rounded-full object-cover ring-1 ring-white/5" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#22C55E] rounded-full ring-2 ring-[#0D0D0F]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm text-[#FAFAFA] block truncate">{agent.name}</span>
-                  <span className="text-[10px] text-[#52525B] truncate block">{agent.role}</span>
+                  <span className="text-[13px] text-[#FAFAFA] block truncate font-medium">{agent.name}</span>
+                  <span className="text-[10px] text-[#3F3F46] truncate block">{agent.role}</span>
                 </div>
               </button>
             ))}
           </div>
 
-          <div className="flex items-center gap-2.5 mt-4 pt-4 border-t border-white/5">
+          {customAgents.length > 0 && (
+            <>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#3F3F46] mb-2">Vos agents</p>
+              <div className="space-y-0.5">
+                {customAgents.map(agent => (
+                  <button key={agent.id}
+                    onClick={() => { navigate(`/dashboard/chat/${agent.id}`); onClose(); }}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-[rgba(255,255,255,0.02)] transition-all text-left"
+                  >
+                    <img src={agent.avatar || '/images/avatar-placeholder-1.png'} alt={agent.name} className="w-7 h-7 rounded-full object-cover" />
+                    <span className="text-[13px] text-[#A1A1AA] truncate">{agent.name}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          <div className="flex items-center gap-2.5 mt-4 pt-4 border-t border-white/[0.04]">
             <div className="w-8 h-8 rounded-full gold-gradient flex items-center justify-center text-[#0A0A0B] text-xs font-bold">RY</div>
             <div>
-              <p className="text-sm font-semibold text-[#FAFAFA]">Raad Yassir</p>
-              <p className="text-[10px] text-[#52525B] uppercase tracking-wider">Admin</p>
+              <p className="text-[13px] font-semibold text-[#FAFAFA]">Raad Yassir</p>
+              <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider">Admin</p>
             </div>
           </div>
         </div>
@@ -120,52 +140,65 @@ function AgentListView() {
   const defaults = filtered.filter(a => a.isDefault === 'true');
   const customs = filtered.filter(a => a.isDefault === 'false');
 
-  if (isLoading) return <div className="p-10 text-[#52525B]">Chargement...</div>;
+  if (isLoading) {
+    return (
+      <div className="p-10">
+        <div className="skeleton h-8 w-48 mb-4" />
+        <div className="skeleton h-4 w-64 mb-8" />
+        <div className="grid lg:grid-cols-2 gap-5">
+          <div className="skeleton h-64" />
+          <div className="skeleton h-64" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 lg:p-10">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-[#FAFAFA] mb-2" style={{ fontFamily: 'var(--font-heading)' }}>Mes Agents</h1>
-        <p className="text-[#A1A1AA] text-sm">Nora pour la communication, Leo pour le RH. Créez vos propres agents sur mesure.</p>
+        <p className="text-[#52525B] text-sm">Nora pour la communication, Leo pour le RH. Créez vos propres agents sur mesure.</p>
       </div>
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div className="relative w-full sm:w-80">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525B]" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#3F3F46]" />
           <input type="text" placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full h-10 bg-[#18181B] border border-white/5 rounded-lg pl-9 pr-4 text-sm text-[#FAFAFA] placeholder-[#52525B] focus:outline-none focus:border-[#D4A853]/30" />
+            className="w-full h-10 bg-[#18181B] border border-white/[0.05] rounded-xl pl-9 pr-4 text-sm text-[#FAFAFA] placeholder-[#3F3F46] focus:outline-none focus:border-[#D4A853]/30 transition-all" />
         </div>
         <button onClick={() => navigate('/dashboard/create')}
-          className="gold-gradient text-[#0A0A0B] font-semibold px-5 py-2.5 rounded-lg hover:brightness-110 transition-all flex items-center gap-2 text-sm">
-          <Plus size={15} /> Créer un agent
+          className="btn-gold text-sm px-5 py-2.5 rounded-xl flex items-center gap-2">
+          <span className="relative z-10 flex items-center gap-2"><Plus size={15} /> Créer un agent</span>
         </button>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-5 mb-8">
         {defaults.map(agent => (
-          <div key={agent.id} className="glass-card p-6 transition-all hover:-translate-y-1 hover:border-[#D4A853]/30 group relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-28 h-28 bg-[rgba(212,168,83,0.03)] rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div key={agent.id} className="glass-card p-6 border-glow relative">
+            <div className="absolute top-0 right-0 w-28 h-28 bg-[rgba(212,168,83,0.02)] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
             <div className="relative">
               <div className="flex items-center gap-4 mb-4">
                 <div className="relative">
-                  <img src={agent.avatar || ''} alt={agent.name} className="w-14 h-14 rounded-full object-cover ring-2 ring-[#D4A853]/30 group-hover:ring-[#D4A853]/60 transition-all" />
-                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#22C55E] rounded-full ring-2 ring-[#111113]" />
+                  <img src={agent.avatar || ''} alt={agent.name} className="w-14 h-14 rounded-full object-cover ring-2 ring-[#D4A853]/20" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#22C55E] rounded-full ring-2 ring-[#0D0D0F]" />
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-bold text-[#FAFAFA]" style={{ fontFamily: 'var(--font-heading)' }}>{agent.name}</h3>
                   <p className="text-[10px] font-medium uppercase tracking-wider text-[#D4A853]">{agent.role}</p>
                 </div>
-                <span className="px-2 py-0.5 text-[10px] font-medium bg-[rgba(34,197,94,0.1)] text-[#22C55E] rounded-full border border-[rgba(34,197,94,0.2)]">Principal</span>
+                <span className="px-2.5 py-1 text-[10px] font-semibold bg-[rgba(34,197,94,0.08)] text-[#22C55E] rounded-full border border-[rgba(34,197,94,0.15)]">
+                  Principal
+                </span>
               </div>
-              <p className="text-sm text-[#A1A1AA] mb-4">{agent.description}</p>
-              <div className="flex flex-wrap gap-1.5 mb-4">
+              <p className="text-sm text-[#52525B] mb-4 leading-relaxed">{agent.description}</p>
+              <div className="flex flex-wrap gap-1.5 mb-5">
                 {(agent.capabilities as string[] || []).slice(0, 4).map(cap => (
-                  <span key={cap} className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.15)]">{cap}</span>
+                  <span key={cap} className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-[rgba(212,168,83,0.06)] text-[#D4A853]/80 border border-[rgba(212,168,83,0.1)]">{cap}</span>
                 ))}
               </div>
               <button onClick={() => navigate(`/dashboard/chat/${agent.id}`)}
-                className="w-full gold-gradient text-[#0A0A0B] text-sm font-semibold py-2.5 rounded-lg hover:brightness-110 transition-all">
-                Discuter avec {agent.name}
+                className="w-full btn-gold text-sm py-2.5 rounded-xl">
+                <span className="relative z-10">Discuter avec {agent.name}</span>
               </button>
             </div>
           </div>
@@ -174,10 +207,10 @@ function AgentListView() {
 
       {customs.length > 0 && (
         <>
-          <p className="text-xs font-medium uppercase tracking-wider text-[#52525B] mb-3">Vos agents personnalisés</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#3F3F46] mb-3">Vos agents personnalisés</p>
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
             {customs.map(agent => (
-              <div key={agent.id} className="glass-card p-5 transition-all hover:-translate-y-1 hover:border-[#D4A853]/30 group">
+              <div key={agent.id} className="glass-card p-5">
                 <div className="flex items-center gap-3 mb-3">
                   <img src={agent.avatar || '/images/avatar-placeholder-1.png'} alt={agent.name} className="w-10 h-10 rounded-full object-cover" />
                   <div>
@@ -186,7 +219,7 @@ function AgentListView() {
                   </div>
                 </div>
                 <button onClick={() => navigate(`/dashboard/chat/${agent.id}`)}
-                  className="w-full text-sm font-medium text-[#D4A853] border border-[#D4A853]/30 py-2 rounded-lg hover:bg-[rgba(212,168,83,0.1)] transition-all">
+                  className="w-full text-sm font-medium text-[#D4A853] border border-[#D4A853]/20 py-2 rounded-xl hover:bg-[rgba(212,168,83,0.06)] transition-all">
                   Discuter
                 </button>
               </div>
@@ -196,8 +229,8 @@ function AgentListView() {
       )}
 
       <button onClick={() => navigate('/dashboard/create')}
-        className="w-full border-2 border-dashed border-[rgba(212,168,83,0.3)] rounded-2xl flex flex-col items-center justify-center gap-2 p-8 hover:border-[#D4A853] hover:bg-[rgba(212,168,83,0.03)] transition-all group">
-        <div className="w-10 h-10 rounded-full bg-[rgba(212,168,83,0.1)] flex items-center justify-center group-hover:bg-[rgba(212,168,83,0.2)] transition-all">
+        className="w-full border-2 border-dashed border-[rgba(212,168,83,0.2)] rounded-2xl flex flex-col items-center justify-center gap-2 p-8 hover:border-[#D4A853]/60 hover:bg-[rgba(212,168,83,0.02)] transition-all group">
+        <div className="w-10 h-10 rounded-full bg-[rgba(212,168,83,0.06)] border border-[rgba(212,168,83,0.1)] flex items-center justify-center group-hover:bg-[rgba(212,168,83,0.12)] transition-all">
           <Plus size={20} className="text-[#D4A853]" />
         </div>
         <span className="text-sm font-medium text-[#D4A853]">Créer un nouvel agent</span>
@@ -230,43 +263,45 @@ function ChatPage() {
   };
 
   const quickPrompts = agent?.slug === 'nora'
-    ? ['Rédige 3 posts LinkedIn pour notre lancement', 'Crée mon calendrier éditorial de la semaine', 'Analyse mes performances réseaux sociaux', 'Rédige une newsletter engageante']
+    ? ['Rédige 3 posts LinkedIn', 'Crée mon calendrier éditorial', 'Analyse mes performances', 'Rédige une newsletter']
     : agent?.slug === 'leo'
-    ? ['Rédige une offre d\'emploi Développeur Full Stack', 'Screening de 34 CV pour Commercial B2B', 'Prépare un process d\'onboarding', 'Rapport RH mensuel']
+    ? ['Rédige une offre d\'emploi', 'Screening de CV', 'Prépare un onboarding', 'Rapport RH mensuel']
     : [];
 
   const formatTime = (d: Date) => new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="h-[calc(100vh-0px)] lg:h-screen flex flex-col" style={{ background: 'rgba(10,10,11,0.85)' }}>
+    <div className="h-[calc(100vh-0px)] lg:h-screen flex flex-col" style={{ background: 'rgba(10,10,11,0.88)' }}>
       {/* Header */}
-      <div className="h-16 flex items-center gap-4 px-6 border-b border-white/5 flex-shrink-0">
-        <button onClick={() => navigate('/dashboard/agents')} className="lg:hidden text-[#A1A1AA]"><ChevronLeft size={20} /></button>
+      <div className="h-16 flex items-center gap-4 px-6 border-b border-white/[0.04] flex-shrink-0"
+        style={{ background: 'rgba(13,13,15,0.6)', backdropFilter: 'blur(20px)' }}>
+        <button onClick={() => navigate('/dashboard/agents')} className="lg:hidden text-[#52525B] hover:text-[#FAFAFA] transition-colors">
+          <ChevronLeft size={20} />
+        </button>
         <div className="relative">
-          <img src={agent?.avatar || ''} alt={agent?.name} className="w-10 h-10 rounded-full object-cover" />
+          <img src={agent?.avatar || ''} alt={agent?.name} className="w-10 h-10 rounded-full object-cover ring-1 ring-[#D4A853]/20" />
           <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#22C55E] rounded-full ring-2 ring-[#0A0A0B]" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[#FAFAFA]">{agent?.name}</p>
+          <p className="text-sm font-bold text-[#FAFAFA]">{agent?.name}</p>
           <p className="text-xs text-[#22C55E]">{agent?.role}</p>
         </div>
-        <button className="w-9 h-9 flex items-center justify-center rounded-lg text-[#52525B] hover:text-[#A1A1AA] hover:bg-white/5 transition-all"><MoreVertical size={16} /></button>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-6 space-y-4">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-4">
-            <div className="w-20 h-20 rounded-full bg-[rgba(212,168,83,0.1)] flex items-center justify-center mb-6">
-              <img src={agent?.avatar || ''} alt={agent?.name} className="w-14 h-14 rounded-full object-cover" />
+            <div className="w-24 h-24 rounded-full bg-[rgba(212,168,83,0.06)] border border-[rgba(212,168,83,0.1)] flex items-center justify-center mb-6">
+              <img src={agent?.avatar || ''} alt={agent?.name} className="w-16 h-16 rounded-full object-cover" />
             </div>
-            <h3 className="text-lg font-semibold text-[#FAFAFA] mb-2" style={{ fontFamily: 'var(--font-heading)' }}>{agent?.name} est prêt(e)</h3>
-            <p className="text-sm text-[#A1A1AA] max-w-sm mb-6">{agent?.description}</p>
+            <h3 className="text-xl font-bold text-[#FAFAFA] mb-2" style={{ fontFamily: 'var(--font-heading)' }}>{agent?.name} est prêt</h3>
+            <p className="text-sm text-[#52525B] max-w-sm mb-6">{agent?.description}</p>
             {quickPrompts.length > 0 && (
               <div className="flex flex-wrap gap-2 justify-center max-w-lg">
                 {quickPrompts.map(prompt => (
                   <button key={prompt} onClick={() => handleSend(prompt)}
-                    className="px-3 py-2 text-xs font-medium rounded-full bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.15)] hover:bg-[rgba(212,168,83,0.15)] transition-all text-left">
+                    className="px-4 py-2.5 text-xs font-medium rounded-full bg-[rgba(212,168,83,0.06)] text-[#D4A853] border border-[rgba(212,168,83,0.12)] hover:bg-[rgba(212,168,83,0.12)] hover:border-[rgba(212,168,83,0.25)] transition-all text-left">
                     {prompt}
                   </button>
                 ))}
@@ -274,43 +309,47 @@ function ChatPage() {
             )}
           </div>
         ) : (
-          messages.map(msg => (
-            <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} gap-2`}>
+          messages.map((msg: Message) => (
+            <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} gap-2.5`}>
               {msg.sender === 'agent' && (
-                <img src={agent?.avatar || ''} alt={agent?.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1" />
+                <img src={agent?.avatar || ''} alt={agent?.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1 ring-1 ring-white/5" />
               )}
-              <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                msg.sender === 'user' ? 'gold-gradient text-[#0A0A0B] font-medium rounded-tr-sm' : 'bg-[#18181B] border border-white/5 text-[#FAFAFA] rounded-tl-sm'
+              <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                msg.sender === 'user'
+                  ? 'gold-gradient text-[#0A0A0B] font-semibold rounded-tr-sm shadow-lg shadow-[rgba(212,168,83,0.15)]'
+                  : 'bg-[#18181B] border border-white/[0.04] text-[#FAFAFA] rounded-tl-sm'
               }`}>
                 {msg.content}
-                <div className={`text-[10px] mt-1 ${msg.sender === 'user' ? 'text-[#0A0A0B]/60' : 'text-[#52525B]'}`}>{formatTime(msg.createdAt)}</div>
+                <div className={`text-[10px] mt-1.5 ${msg.sender === 'user' ? 'text-[#0A0A0B]/50' : 'text-[#3F3F46]'}`}>{formatTime(msg.createdAt)}</div>
               </div>
             </div>
           ))
         )}
 
         {isSending && (
-          <div className="flex items-start gap-2">
-            <img src={agent?.avatar || ''} alt="" className="w-8 h-8 rounded-full object-cover" />
-            <div className="bg-[#18181B] border border-white/5 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-[#52525B] rounded-full typing-dot" />
-              <span className="w-2 h-2 bg-[#52525B] rounded-full typing-dot" />
-              <span className="w-2 h-2 bg-[#52525B] rounded-full typing-dot" />
+          <div className="flex items-start gap-2.5">
+            <img src={agent?.avatar || ''} alt="" className="w-8 h-8 rounded-full object-cover ring-1 ring-white/5" />
+            <div className="bg-[#18181B] border border-white/[0.04] rounded-2xl rounded-tl-sm px-5 py-3.5 flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-[#D4A853]/40 rounded-full typing-dot" />
+              <span className="w-2 h-2 bg-[#D4A853]/40 rounded-full typing-dot" />
+              <span className="w-2 h-2 bg-[#D4A853]/40 rounded-full typing-dot" />
             </div>
           </div>
         )}
       </div>
 
       {/* Input */}
-      <div className="flex-shrink-0 border-t border-white/5 px-4 lg:px-6 py-4">
+      <div className="flex-shrink-0 border-t border-white/[0.04] px-4 lg:px-6 py-4" style={{ background: 'rgba(13,13,15,0.5)', backdropFilter: 'blur(20px)' }}>
         <div className="flex items-center gap-3">
-          <button className="w-10 h-10 flex items-center justify-center rounded-full text-[#52525B] hover:text-[#A1A1AA] hover:bg-white/5 transition-all flex-shrink-0"><Paperclip size={18} /></button>
+          <button className="w-10 h-10 flex items-center justify-center rounded-full text-[#3F3F46] hover:text-[#A1A1AA] hover:bg-white/[0.03] transition-all flex-shrink-0">
+            <Paperclip size={18} />
+          </button>
           <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
             placeholder={`Message à ${agent?.name}...`}
-            className="flex-1 h-12 bg-[#18181B] border border-white/5 rounded-full px-5 text-sm text-[#FAFAFA] placeholder-[#52525B] focus:outline-none focus:border-[#D4A853]/30 transition-colors" />
+            className="flex-1 h-12 bg-[#18181B] border border-white/[0.05] rounded-full px-5 text-sm text-[#FAFAFA] placeholder-[#3F3F46] focus:outline-none focus:border-[#D4A853]/30 transition-all" />
           <button onClick={() => handleSend()} disabled={!input.trim() || isSending}
-            className="w-11 h-11 gold-gradient rounded-full flex items-center justify-center hover:brightness-110 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0">
-            <Send size={16} className="text-[#0A0A0B]" />
+            className="w-11 h-11 btn-gold rounded-full flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0">
+            <span className="relative z-10"><Send size={16} className="text-[#0A0A0B]" /></span>
           </button>
         </div>
       </div>
@@ -324,7 +363,7 @@ function CreateAgentView() {
   const { createAgent, isCreating } = useChat();
   const [form, setForm] = useState({
     name: '', role: '', description: '', avatar: ALL_AVATARS[2],
-    personality: '50', capabilities: [] as string[], tools: [] as string[],
+    capabilities: [] as string[], tools: [] as string[],
     systemPrompt: '',
   });
 
@@ -332,9 +371,9 @@ function CreateAgentView() {
 
   const applyTemplate = (type: 'com' | 'rh') => {
     if (type === 'com') {
-      setForm(p => ({ ...p, name: p.name || 'CM Expert', role: 'Agent Communication', capabilities: ['Rédaction', 'Visuels', 'Analytics', 'Community Mgmt'], tools: ['LinkedIn', 'Instagram', 'Gmail'], systemPrompt: p.systemPrompt || `Tu es un expert en communication digitale et réseaux sociaux. Tu rédiges des posts engageants, crées des calendriers éditoriaux et analyses les performances.` }));
+      setForm(p => ({ ...p, name: p.name || 'CM Expert', role: 'Agent Communication', capabilities: ['Rédaction', 'Visuels', 'Analytics', 'Community Mgmt'], systemPrompt: p.systemPrompt || `Tu es un expert en communication digitale. Tu rédiges des posts engageants pour LinkedIn et Instagram, crées des calendriers éditoriaux et analyses les performances des réseaux sociaux. Tu réponds en français avec un ton professionnel mais engageant.` }));
     } else {
-      setForm(p => ({ ...p, name: p.name || 'RH Pro', role: 'Agent RH', capabilities: ['Recrutement', 'Screening', 'Entretiens', 'Onboarding'], tools: ['LinkedIn', 'Google Calendar', 'Slack'], systemPrompt: p.systemPrompt || `Tu es un expert en Ressources Humaines. Tu rédiges des offres d'emploi, screenes des CV, prépares des entretiens et gères l'onboarding.` }));
+      setForm(p => ({ ...p, name: p.name || 'RH Pro', role: 'Agent RH', capabilities: ['Recrutement', 'Screening', 'Entretiens', 'Onboarding'], systemPrompt: p.systemPrompt || `Tu es un expert en Ressources Humaines. Tu rédiges des offres d'emploi attractives, analyses des CV, prépares des entretiens et gères l'onboarding. Tu réponds en français avec un ton structuré et professionnel.` }));
     }
   };
 
@@ -350,46 +389,96 @@ function CreateAgentView() {
   };
 
   return (
-    <div className="p-6 lg:p-10 overflow-y-auto h-screen" style={{ background: 'rgba(10,10,11,0.85)' }}>
+    <div className="p-6 lg:p-10 overflow-y-auto h-screen" style={{ background: 'rgba(10,10,11,0.88)' }}>
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold text-[#FAFAFA] mb-2" style={{ fontFamily: 'var(--font-heading)' }}>Créer un agent</h1>
-        <p className="text-[#A1A1AA] text-sm mb-6">Personnalisez votre agent ou partez d'un template.</p>
+        <p className="text-[#52525B] text-sm mb-6">Personnalisez votre agent ou partez d'un template.</p>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <button onClick={() => applyTemplate('com')} className="glass-card p-4 text-left hover:border-[#D4A853]/30 transition-all">
-            <div className="flex items-center gap-2 mb-1"><Instagram size={14} className="text-[#D4A853]" /><span className="text-sm font-semibold text-[#FAFAFA]">Template Com</span></div>
-            <p className="text-[11px] text-[#52525B]">Réseaux sociaux, rédaction, visuels</p>
+          <button onClick={() => applyTemplate('com')} className="glass-card p-4 text-left hover:border-[#D4A853]/30 transition-all group">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-8 h-8 rounded-lg bg-[rgba(212,168,83,0.06)] border border-[rgba(212,168,83,0.1)] flex items-center justify-center">
+                <Instagram size={14} className="text-[#D4A853]" />
+              </div>
+              <span className="text-sm font-bold text-[#FAFAFA]">Template Com</span>
+            </div>
+            <p className="text-[11px] text-[#3F3F46]">Réseaux sociaux, rédaction, visuels</p>
           </button>
-          <button onClick={() => applyTemplate('rh')} className="glass-card p-4 text-left hover:border-[#D4A853]/30 transition-all">
-            <div className="flex items-center gap-2 mb-1"><Users size={14} className="text-[#D4A853]" /><span className="text-sm font-semibold text-[#FAFAFA]">Template RH</span></div>
-            <p className="text-[11px] text-[#52525B]">Recrutement, screening, entretiens</p>
+          <button onClick={() => applyTemplate('rh')} className="glass-card p-4 text-left hover:border-[#D4A853]/30 transition-all group">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-8 h-8 rounded-lg bg-[rgba(212,168,83,0.06)] border border-[rgba(212,168,83,0.1)] flex items-center justify-center">
+                <Users size={14} className="text-[#D4A853]" />
+              </div>
+              <span className="text-sm font-bold text-[#FAFAFA]">Template RH</span>
+            </div>
+            <p className="text-[11px] text-[#3F3F46]">Recrutement, screening, entretiens</p>
           </button>
         </div>
 
         <div className="space-y-5">
           <div className="glass-card p-5">
-            <h3 className="text-sm font-semibold text-[#FAFAFA] mb-3 flex items-center gap-2"><Sparkles size={15} className="text-[#D4A853]" /> Identité</h3>
+            <h3 className="text-sm font-bold text-[#FAFAFA] mb-4 flex items-center gap-2"><Sparkles size={15} className="text-[#D4A853]" /> Identité</h3>
             <div className="space-y-3">
-              <div><label className="text-xs text-[#A1A1AA] mb-1 block">Nom *</label><input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Ex: Maxime" className="w-full h-10 bg-[#18181B] border border-white/5 rounded-lg px-4 text-sm text-[#FAFAFA] placeholder-[#52525B] focus:outline-none focus:border-[#D4A853]/30" /></div>
-              <div><label className="text-xs text-[#A1A1AA] mb-1 block">Rôle</label><input type="text" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Ex: Agent Marketing" className="w-full h-10 bg-[#18181B] border border-white/5 rounded-lg px-4 text-sm text-[#FAFAFA] placeholder-[#52525B] focus:outline-none focus:border-[#D4A853]/30" /></div>
-              <div><label className="text-xs text-[#A1A1AA] mb-2 block">Avatar</label><div className="flex gap-2">{ALL_AVATARS.map(src => <button key={src} onClick={() => setForm(p => ({ ...p, avatar: src }))} className={`w-11 h-11 rounded-full overflow-hidden ring-2 transition-all ${form.avatar === src ? 'ring-[#D4A853]' : 'ring-transparent'}`}><img src={src} alt="" className="w-full h-full object-cover" /></button>)}</div></div>
+              <div>
+                <label className="text-xs text-[#52525B] mb-1.5 block font-medium">Nom de l'agent *</label>
+                <input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Ex: Maxime"
+                  className="w-full h-10 bg-[#18181B] border border-white/[0.05] rounded-xl px-4 text-sm text-[#FAFAFA] placeholder-[#3F3F46] focus:outline-none focus:border-[#D4A853]/30 transition-all" />
+              </div>
+              <div>
+                <label className="text-xs text-[#52525B] mb-1.5 block font-medium">Rôle</label>
+                <input type="text" value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} placeholder="Ex: Agent Marketing"
+                  className="w-full h-10 bg-[#18181B] border border-white/[0.05] rounded-xl px-4 text-sm text-[#FAFAFA] placeholder-[#3F3F46] focus:outline-none focus:border-[#D4A853]/30 transition-all" />
+              </div>
+              <div>
+                <label className="text-xs text-[#52525B] mb-2 block font-medium">Avatar</label>
+                <div className="flex gap-2.5">
+                  {ALL_AVATARS.map(src => (
+                    <button key={src} onClick={() => setForm(p => ({ ...p, avatar: src }))}
+                      className={`w-12 h-12 rounded-full overflow-hidden ring-2 transition-all duration-200 ${form.avatar === src ? 'ring-[#D4A853] scale-105' : 'ring-transparent hover:ring-[#D4A853]/40'}`}>
+                      <img src={src} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="glass-card p-5">
-            <h3 className="text-sm font-semibold text-[#FAFAFA] mb-3 flex items-center gap-2"><Wand2 size={15} className="text-[#D4A853]" /> Personnalité</h3>
-            <div><label className="text-xs text-[#A1A1AA] mb-1 block">Description</label><textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Décrivez l'agent..." rows={2} className="w-full bg-[#18181B] border border-white/5 rounded-lg px-4 py-2.5 text-sm text-[#FAFAFA] placeholder-[#52525B] focus:outline-none focus:border-[#D4A853]/30 resize-none" /></div>
-            <div className="mt-3"><label className="text-xs text-[#A1A1AA] mb-1 block">Instructions système (prompt IA)</label><textarea value={form.systemPrompt} onChange={e => setForm(p => ({ ...p, systemPrompt: e.target.value }))} placeholder="Définissez comment l'IA doit se compacter..." rows={4} className="w-full bg-[#18181B] border border-white/5 rounded-lg px-4 py-2.5 text-sm text-[#FAFAFA] placeholder-[#52525B] focus:outline-none focus:border-[#D4A853]/30 resize-none" /></div>
+            <h3 className="text-sm font-bold text-[#FAFAFA] mb-4 flex items-center gap-2"><Wand2 size={15} className="text-[#D4A853]" /> Personnalité IA</h3>
+            <div>
+              <label className="text-xs text-[#52525B] mb-1.5 block font-medium">Description</label>
+              <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Décrivez ce que l'agent fait..." rows={2}
+                className="w-full bg-[#18181B] border border-white/[0.05] rounded-xl px-4 py-3 text-sm text-[#FAFAFA] placeholder-[#3F3F46] focus:outline-none focus:border-[#D4A853]/30 resize-none transition-all" />
+            </div>
+            <div className="mt-3">
+              <label className="text-xs text-[#52525B] mb-1.5 block font-medium">Instructions système (prompt IA) *</label>
+              <textarea value={form.systemPrompt} onChange={e => setForm(p => ({ ...p, systemPrompt: e.target.value }))}
+                placeholder="Définissez le comportement de l'IA. Ex: 'Tu es un expert en...'" rows={4}
+                className="w-full bg-[#18181B] border border-white/[0.05] rounded-xl px-4 py-3 text-sm text-[#FAFAFA] placeholder-[#3F3F46] focus:outline-none focus:border-[#D4A853]/30 resize-none transition-all" />
+              <p className="text-[11px] text-[#3F3F46] mt-1.5">Ce prompt guide les réponses de l'IA. Soyez précis pour de meilleurs résultats.</p>
+            </div>
           </div>
 
           <div className="glass-card p-5">
-            <h3 className="text-sm font-semibold text-[#FAFAFA] mb-3 flex items-center gap-2"><Star size={15} className="text-[#D4A853]" /> Compétences</h3>
-            <div className="flex flex-wrap gap-2">{CAP_OPTIONS.map(c => <button key={c} onClick={() => toggleCap(c)} className={`px-3 py-1 text-xs font-medium rounded-full border transition-all ${form.capabilities.includes(c) ? 'bg-[rgba(212,168,83,0.2)] text-[#D4A853] border-[rgba(212,168,83,0.3)]' : 'bg-transparent text-[#A1A1AA] border-white/10'}`}>{c}</button>)}</div>
+            <h3 className="text-sm font-bold text-[#FAFAFA] mb-4 flex items-center gap-2"><Star size={15} className="text-[#D4A853]" /> Compétences</h3>
+            <div className="flex flex-wrap gap-2">
+              {CAP_OPTIONS.map(c => (
+                <button key={c} onClick={() => toggleCap(c)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all duration-200 ${
+                    form.capabilities.includes(c) ? 'bg-[rgba(212,168,83,0.12)] text-[#D4A853] border-[rgba(212,168,83,0.2)]' : 'bg-transparent text-[#52525B] border-white/[0.06] hover:border-white/10'
+                  }`}>
+                  {c}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center gap-4 pb-8">
-            <button onClick={handleCreate} disabled={!form.name.trim() || isCreating} className="gold-gradient text-[#0A0A0B] font-semibold px-8 py-3 rounded-xl hover:brightness-110 transition-all disabled:opacity-30">{isCreating ? 'Création...' : 'Créer l\'agent'}</button>
-            <button onClick={() => navigate('/dashboard/agents')} className="text-[#52525B] hover:text-[#A1A1AA] text-sm font-medium transition-colors">Annuler</button>
+            <button onClick={handleCreate} disabled={!form.name.trim() || isCreating}
+              className="btn-gold px-8 py-3 rounded-xl disabled:opacity-30">
+              <span className="relative z-10">{isCreating ? 'Création...' : 'Créer l\'agent'}</span>
+            </button>
+            <button onClick={() => navigate('/dashboard/agents')} className="text-[#3F3F46] hover:text-[#A1A1AA] text-sm font-medium transition-colors">Annuler</button>
           </div>
         </div>
       </div>
@@ -399,57 +488,85 @@ function CreateAgentView() {
 
 /* ═══════════ DASHBOARD HOME ═══════════ */
 function DashboardHome() {
-  const { agents } = useChat();
+  const { agents, isLoading } = useChat();
   const navigate = useNavigate();
   const defaults = agents.filter(a => a.isDefault === 'true');
 
+  if (isLoading) {
+    return (
+      <div className="p-10">
+        <div className="skeleton h-8 w-48 mb-4" />
+        <div className="skeleton h-4 w-64 mb-8" />
+        <div className="grid sm:grid-cols-2 gap-4 mb-8">
+          <div className="skeleton h-28" /><div className="skeleton h-28" />
+        </div>
+        <div className="skeleton h-40" />
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 lg:p-10 overflow-y-auto h-screen" style={{ background: 'rgba(10,10,11,0.85)' }}>
+    <div className="p-6 lg:p-10 overflow-y-auto h-screen" style={{ background: 'rgba(10,10,11,0.88)' }}>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#FAFAFA] mb-2" style={{ fontFamily: 'var(--font-heading)' }}>Tableau de bord</h1>
-        <p className="text-[#A1A1AA] text-sm">Vos agents IA Communication et RH.</p>
+        <h1 className="text-3xl font-bold text-[#FAFAFA] mb-1" style={{ fontFamily: 'var(--font-heading)' }}>Tableau de bord</h1>
+        <p className="text-[#52525B] text-sm">Vos agents IA Communication et RH.</p>
       </div>
 
+      {/* Agent cards */}
       <div className="grid sm:grid-cols-2 gap-4 mb-8">
         {defaults.map(agent => (
           <button key={agent.id} onClick={() => navigate(`/dashboard/chat/${agent.id}`)}
-            className="glass-card p-5 text-left transition-all hover:-translate-y-1 hover:border-[#D4A853]/30 group">
-            <div className="flex items-center gap-4">
-              <div className="relative"><img src={agent.avatar || ''} alt={agent.name} className="w-14 h-14 rounded-full object-cover" /><span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#22C55E] rounded-full ring-2 ring-[#111113]" /></div>
-              <div className="flex-1">
+            className="glass-card p-5 text-left border-glow relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-[rgba(212,168,83,0.02)] rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="relative flex items-center gap-4">
+              <div className="relative flex-shrink-0">
+                <img src={agent.avatar || ''} alt={agent.name} className="w-14 h-14 rounded-full object-cover ring-2 ring-[#D4A853]/15 group-hover:ring-[#D4A853]/40 transition-all" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#22C55E] rounded-full ring-2 ring-[#0D0D0F]" />
+              </div>
+              <div className="flex-1 min-w-0">
                 <p className="text-base font-bold text-[#FAFAFA]" style={{ fontFamily: 'var(--font-heading)' }}>{agent.name}</p>
                 <p className="text-xs text-[#D4A853] mb-1">{agent.role}</p>
-                <p className="text-xs text-[#52525B]">{(agent.capabilities as string[]).slice(0, 3).join(' · ')}</p>
+                <p className="text-xs text-[#3F3F46] truncate">{(agent.capabilities as string[]).slice(0, 3).join(' · ')}</p>
               </div>
-              <ChevronRight size={18} className="text-[#52525B] group-hover:text-[#D4A853] transition-colors" />
+              <ChevronRight size={18} className="text-[#3F3F46] group-hover:text-[#D4A853] transition-colors flex-shrink-0" />
             </div>
           </button>
         ))}
       </div>
 
+      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           { label: 'Messages', value: '—', icon: MessageSquare, color: '#D4A853' },
           { label: 'Agents', value: String(agents.length), icon: Bot, color: '#22C55E' },
-          { label: 'Posts rédigés', value: '340+', icon: PenTool, color: '#3B82F6' },
+          { label: 'Posts', value: '340+', icon: PenTool, color: '#3B82F6' },
           { label: 'CV screenés', value: '210+', icon: Target, color: '#A855F7' },
         ].map(s => (
           <div key={s.label} className="glass-card p-4">
-            <div className="flex items-center justify-between mb-2"><s.icon size={16} style={{ color: s.color }} /><span className="text-xl font-bold text-[#FAFAFA]" style={{ fontFamily: 'var(--font-heading)' }}>{s.value}</span></div>
-            <p className="text-[10px] text-[#52525B] uppercase tracking-wider">{s.label}</p>
+            <div className="flex items-center justify-between mb-2">
+              <s.icon size={16} style={{ color: s.color }} />
+              <span className="text-xl font-bold text-[#FAFAFA]" style={{ fontFamily: 'var(--font-heading)' }}>{s.value}</span>
+            </div>
+            <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider font-medium">{s.label}</p>
           </div>
         ))}
       </div>
 
+      {/* Tips */}
       <div className="glass-card p-6">
-        <h3 className="text-base font-semibold text-[#FAFAFA] mb-4" style={{ fontFamily: 'var(--font-heading)' }}>Conseils rapides</h3>
+        <h3 className="text-base font-bold text-[#FAFAFA] mb-4" style={{ fontFamily: 'var(--font-heading)' }}>Conseils rapides</h3>
         <div className="space-y-3">
           {[
-            { icon: Sparkles, text: 'Demandez à Nora de rédiger 3 versions d\'un post pour tester différents tons' },
-            { icon: Target, text: 'Leo peut préparer une grille d\'évaluation avant chaque entretien' },
-            { icon: BarChart3, text: 'Demandez un rapport hebdomadaire de vos KPIs com et RH' },
+            { icon: Sparkles, text: "Demandez à Nora 3 versions d'un post pour tester différents tons" },
+            { icon: Target, text: "Leo peut préparer une grille d'évaluation avant chaque entretien" },
+            { icon: BarChart3, text: "Demandez un rapport hebdomadaire de vos KPIs com et RH" },
           ].map((tip, i) => (
-            <div key={i} className="flex items-start gap-3"><tip.icon size={16} className="text-[#D4A853] mt-0.5 flex-shrink-0" /><p className="text-sm text-[#A1A1AA]">{tip.text}</p></div>
+            <div key={i} className="flex items-start gap-3">
+              <div className="w-7 h-7 rounded-lg bg-[rgba(212,168,83,0.06)] border border-[rgba(212,168,83,0.1)] flex items-center justify-center flex-shrink-0">
+                <tip.icon size={13} className="text-[#D4A853]" />
+              </div>
+              <p className="text-sm text-[#52525B] leading-relaxed">{tip.text}</p>
+            </div>
           ))}
         </div>
       </div>
@@ -468,9 +585,10 @@ export default function DashboardPage() {
       <div className="lg:grid lg:grid-cols-[260px_1fr] min-h-screen">
         <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
-        <div className="lg:hidden h-14 flex items-center px-4 border-b border-white/5" style={{ background: 'rgba(17,17,19,0.95)' }}>
-          <button onClick={() => setMobileOpen(true)} className="w-10 h-10 flex items-center justify-center text-[#A1A1AA]"><Menu size={20} /></button>
-          <span className="ml-3 text-sm font-semibold text-[#FAFAFA]">LNR AI HUB</span>
+        <div className="lg:hidden h-14 flex items-center px-4 border-b border-white/[0.04]"
+          style={{ background: 'rgba(13,13,15,0.95)', backdropFilter: 'blur(20px)' }}>
+          <button onClick={() => setMobileOpen(true)} className="w-10 h-10 flex items-center justify-center text-[#52525B]"><Menu size={20} /></button>
+          <span className="ml-3 text-sm font-bold text-[#FAFAFA]">LNR AI HUB</span>
         </div>
 
         <main className={isChat ? 'fixed inset-0 lg:relative lg:inset-auto z-30 bg-[#0A0A0B]' : ''}>
