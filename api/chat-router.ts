@@ -1,22 +1,23 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { agents, chatMessages, agentAnalytics } from "@db/schema";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { chatCompletion, AGENT_SYSTEM_PROMPTS } from "./ai-service";
 import type { ChatCompletionMessage } from "./ai-service";
+import { checkRateLimit } from "./rate-limit";
 
 export const chatRouter = createRouter({
-  // ─── List all agents ───
+  // ─── List all agents (public — needed for landing page) ───
   listAgents: publicQuery.query(async () => {
     const db = getDb();
     const rows = await db.select().from(agents).orderBy(agents.id);
     return rows;
   }),
 
-  // ─── Get single agent by slug ───
+  // ─── Get single agent by slug (public) ───
   getAgent: publicQuery
-    .input(z.object({ slug: z.string() }))
+    .input(z.object({ slug: z.string().min(1).max(50) }))
     .query(async ({ input }) => {
       const db = getDb();
       const rows = await db
@@ -26,10 +27,10 @@ export const chatRouter = createRouter({
       return rows[0] ?? null;
     }),
 
-  // ─── Get chat history for an agent ───
-  getHistory: publicQuery
-    .input(z.object({ agentId: z.number() }))
-    .query(async ({ input }) => {
+  // ─── Get chat history (auth required) ───
+  getHistory: authedQuery
+    .input(z.object({ agentId: z.number().int().positive() }))
+    .query(async ({ input, ctx }) => {
       const db = getDb();
       const rows = await db
         .select()
@@ -39,16 +40,23 @@ export const chatRouter = createRouter({
       return rows;
     }),
 
-  // ─── Send message & get AI response ───
-  sendMessage: publicQuery
+  // ─── Send message & get AI response (auth required + rate limited) ───
+  sendMessage: authedQuery
     .input(
       z.object({
-        agentId: z.number(),
+        agentId: z.number().int().positive(),
         content: z.string().min(1).max(4000),
       })
     )
     .mutation(async ({ input, ctx }) => {
       const db = getDb();
+      const userId = ctx.user.id;
+
+      // Extra rate limit per user
+      const userRate = checkRateLimit(`user:${userId}:chat`, 60, 60 * 1000);
+      if (!userRate.allowed) {
+        return { response: "Vous avez atteint la limite de messages par minute. Veuillez patienter." };
+      }
 
       // 1. Fetch agent config
       const agentRows = await db
@@ -61,6 +69,7 @@ export const chatRouter = createRouter({
       // 2. Save user message + track
       await db.insert(chatMessages).values({
         agentId: input.agentId,
+        userId,
         content: input.content,
         sender: "user",
       });
@@ -85,8 +94,7 @@ export const chatRouter = createRouter({
         .orderBy(desc(chatMessages.createdAt))
         .limit(20);
 
-      // Reverse to chronological order
-      const chronological = history.reverse();
+      const chronological = [...history].reverse();
 
       // 4. Build messages for Kimi API
       const systemPrompt =
@@ -104,9 +112,8 @@ export const chatRouter = createRouter({
 
       // 5. Call Kimi AI with user's access token
       let aiResponse: string;
-      
+
       if (ctx.accessToken) {
-        // User is authenticated — use their token
         try {
           aiResponse = await chatCompletion(ctx.accessToken, apiMessages, {
             temperature: 0.75,
@@ -114,21 +121,20 @@ export const chatRouter = createRouter({
           });
         } catch (err) {
           console.error("[AI] Error calling Kimi:", err);
-          aiResponse = "Désolé, je rencontre un problème technique avec le service IA. Veuillez réessayer.";
+          aiResponse = "Désolé, je rencontre un problème technique avec le service IA. Veuillez réessayer dans un moment.";
         }
       } else {
-        // User not authenticated — return helpful message
-        aiResponse = `Je suis ${agent.name}, ${agent.role}. Pour que je puisse vous aider avec mes capacités d'IA avancées, veuillez vous connecter via le bouton en haut à droite. \n\nEn attendant, voici ce que je peux faire pour vous :\n\n${(agent.capabilities as string[] || []).map(c => `• ${c}`).join('\n')}`;
+        aiResponse = `Je suis ${agent.name}, ${agent.role}.\n\nPour accéder à mes capacités d'IA avancées, veuillez vous reconnecter.\n\nCe que je peux faire :\n${(agent.capabilities as string[] || []).map(c => `• ${c}`).join('\n')}`;
       }
 
       // 6. Save AI response + track
       await db.insert(chatMessages).values({
         agentId: input.agentId,
+        userId,
         content: aiResponse,
         sender: "agent",
       });
 
-      // Track AI response in analytics
       const existing2 = await db.select().from(agentAnalytics)
         .where(and(eq(agentAnalytics.agentId, input.agentId), eq(agentAnalytics.date, today)));
       if (existing2.length > 0) {
@@ -140,23 +146,28 @@ export const chatRouter = createRouter({
       return { response: aiResponse };
     }),
 
-  // ─── Create custom agent ───
-  createAgent: publicQuery
+  // ─── Create custom agent (auth required) ───
+  createAgent: authedQuery
     .input(
       z.object({
-        slug: z.string().min(1).max(50),
+        slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/),
         name: z.string().min(1).max(100),
         role: z.string().min(1).max(200),
-        description: z.string().optional(),
-        avatar: z.string().optional(),
-        systemPrompt: z.string().min(10),
-        capabilities: z.array(z.string()).optional(),
-        tools: z.array(z.string()).optional(),
-        personality: z.string().optional(),
+        description: z.string().max(2000).optional(),
+        avatar: z.string().max(500).optional(),
+        systemPrompt: z.string().min(10).max(10000),
+        capabilities: z.array(z.string().max(50)).max(20).optional(),
+        tools: z.array(z.string().max(50)).max(20).optional(),
+        personality: z.enum(["professional", "friendly", "creative", "balanced"]).optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = getDb();
+      // Check slug uniqueness
+      const existing = await db.select().from(agents).where(eq(agents.slug, input.slug));
+      if (existing.length > 0) {
+        throw new Error("Un agent avec ce slug existe déjà");
+      }
       const result = await db.insert(agents).values({
         slug: input.slug,
         name: input.name,
@@ -172,9 +183,9 @@ export const chatRouter = createRouter({
       return { id: Number(result[0].insertId) };
     }),
 
-  // ─── Delete agent ───
-  deleteAgent: publicQuery
-    .input(z.object({ id: z.number() }))
+  // ─── Delete agent (auth required) ───
+  deleteAgent: authedQuery
+    .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const db = getDb();
       await db.delete(chatMessages).where(eq(chatMessages.agentId, input.id));

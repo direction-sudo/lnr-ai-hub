@@ -1,131 +1,147 @@
-import type { Context } from "hono";
 import { setCookie } from "hono/cookie";
-import * as jose from "jose";
-import * as cookie from "cookie";
+import { getCookie } from "hono/cookie";
+import { deleteCookie } from "hono/cookie";
+import { verifySessionToken } from "./session";
 import { env } from "../lib/env";
-import { getSessionCookieOptions } from "../lib/cookies";
-import { Session } from "@contracts/constants";
-import { Errors } from "@contracts/errors";
-import { signSessionToken, verifySessionToken } from "./session";
-import { users as kimiUsers } from "./platform";
-import { findUserByUnionId, upsertUser } from "../queries/users";
-import type { TokenResponse } from "./types";
+import { getDb } from "../queries/connection";
+import { users } from "@db/schema";
+import { eq } from "drizzle-orm";
+import { signSessionToken } from "./session";
+import { Paths } from "@contracts/constants";
+import type { Context } from "hono";
+import type { User } from "@db/schema";
 
-async function exchangeAuthCode(
-  code: string,
-  redirectUri: string,
-): Promise<TokenResponse> {
-  const body = new URLSearchParams({
-    grant_type: "authorization_code",
-    code,
-    client_id: env.appId,
-    redirect_uri: redirectUri,
-    client_secret: env.appSecret,
+export async function authenticateRequest(
+  headers: Headers,
+): Promise<User | undefined> {
+  // Extract session from cookie header manually since we don't have a Hono context here
+  const cookieHeader = headers.get("cookie");
+  if (!cookieHeader) return undefined;
+
+  const sessionMatch = cookieHeader.match(/session=([^;]+)/);
+  if (!sessionMatch) return undefined;
+
+  const token = sessionMatch[1];
+  if (!token) return undefined;
+
+  const payload = await verifySessionToken(decodeURIComponent(token));
+  if (!payload) return undefined;
+
+  const db = getDb();
+  const rows = await db
+    .select()
+    .from(users)
+    .where(eq(users.unionId, payload.unionId));
+
+  return rows[0] ?? undefined;
+}
+
+// Helper to set secure cookie
+export function setSessionCookie(c: Context, token: string) {
+  setCookie(c, "session", token, {
+    httpOnly: true,
+    secure: env.isProduction,
+    sameSite: "Strict",
+    maxAge: 60 * 60 * 24 * 7, // 7 days
+    path: "/",
   });
-
-  const resp = await fetch(`${env.kimiAuthUrl}/api/oauth/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: body.toString(),
-  });
-
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`Token exchange failed (${resp.status}): ${text}`);
-  }
-
-  return resp.json() as Promise<TokenResponse>;
 }
 
-const jwks = jose.createRemoteJWKSet(
-  new URL(`${env.kimiAuthUrl}/api/.well-known/jwks.json`),
-);
-
-async function verifyAccessToken(
-  accessToken: string,
-): Promise<{ userId: string; clientId: string }> {
-  const { payload } = await jose.jwtVerify(accessToken, jwks);
-  const userId = payload.user_id as string;
-  const clientId = payload.client_id as string;
-  if (!userId) {
-    throw new Error("user_id missing from access token");
-  }
-  return { userId, clientId };
+export function clearSessionCookie(c: Context) {
+  deleteCookie(c, "session", { path: "/" });
 }
 
-export async function authenticateRequest(headers: Headers) {
-  const cookies = cookie.parse(headers.get("cookie") || "");
-  const token = cookies[Session.cookieName];
-  if (!token) {
-    console.warn("[auth] No session cookie found in request.");
-    throw Errors.forbidden("Invalid authentication token.");
-  }
-  const claim = await verifySessionToken(token);
-  if (!claim) {
-    throw Errors.forbidden("Invalid authentication token.");
-  }
-  const user = await findUserByUnionId(claim.unionId);
-  if (!user) {
-    throw Errors.forbidden("User not found. Please re-login.");
-  }
-  return user;
-}
-
+// OAuth callback handler
 export function createOAuthCallbackHandler() {
   return async (c: Context) => {
     const code = c.req.query("code");
-    const state = c.req.query("state");
-    const error = c.req.query("error");
-    const errorDescription = c.req.query("error_description");
-
-    if (error) {
-      if (error === "access_denied") {
-        return c.redirect("/", 302);
-      }
-      return c.json(
-        { error, error_description: errorDescription },
-        400,
-      );
-    }
-
-    if (!code || !state) {
-      return c.json({ error: "code and state are required" }, 400);
+    if (!code) {
+      return c.json({ error: "No code provided" }, 400);
     }
 
     try {
-      const redirectUri = atob(state);
-      const tokenResp = await exchangeAuthCode(code, redirectUri);
-      const { userId } = await verifyAccessToken(tokenResp.access_token);
-      const userProfile = await kimiUsers.getProfile(tokenResp.access_token);
-      if (!userProfile) {
-        throw new Error("Failed to fetch user profile from Kimi Open");
+      // Exchange code for token
+      const tokenRes = await fetch(`${env.kimiAuthUrl}/api/oauth/token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          app_id: env.appId,
+          app_secret: env.appSecret,
+          code,
+          grant_type: "authorization_code",
+        }),
+      });
+
+      if (!tokenRes.ok) {
+        return c.json({ error: "Token exchange failed" }, 401);
       }
 
-      await upsertUser({
-        unionId: userId,
-        name: userProfile.name,
-        avatar: userProfile.avatar_url,
-        lastSignInAt: new Date(),
+      const tokenData = (await tokenRes.json()) as {
+        access_token: string;
+        refresh_token?: string;
+      };
+
+      // Get user info
+      const userRes = await fetch(`${env.kimiAuthUrl}/api/oauth/user`, {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
       });
 
-      const token = await signSessionToken({
-        unionId: userId,
+      if (!userRes.ok) {
+        return c.json({ error: "Failed to get user info" }, 401);
+      }
+
+      const userData = (await userRes.json()) as {
+        union_id: string;
+        name?: string;
+        email?: string;
+        avatar_url?: string;
+      };
+
+      // Upsert user
+      const db = getDb();
+      const existing = await db
+        .select()
+        .from(users)
+        .where(eq(users.unionId, userData.union_id));
+
+      if (existing.length === 0) {
+        await db.insert(users).values({
+          unionId: userData.union_id,
+          name: userData.name || "User",
+          email: userData.email,
+          avatar: userData.avatar_url,
+          role: "user",
+        });
+      } else {
+        await db
+          .update(users)
+          .set({
+            name: userData.name || existing[0].name,
+            email: userData.email || existing[0].email,
+            avatar: userData.avatar_url || existing[0].avatar,
+            lastSignInAt: new Date(),
+          })
+          .where(eq(users.id, existing[0].id));
+      }
+
+      // Sign session token with access token for AI calls
+      const sessionToken = await signSessionToken({
+        unionId: userData.union_id,
         clientId: env.appId,
-        accessToken: tokenResp.access_token,
+        accessToken: tokenData.access_token,
       });
 
-      const cookieOpts = getSessionCookieOptions(c.req.raw.headers);
-      setCookie(c, Session.cookieName, token, {
-        ...cookieOpts,
-        maxAge: Session.maxAgeMs / 1000,
-      });
+      setSessionCookie(c, sessionToken);
 
-      return c.redirect("/", 302);
-    } catch (error) {
-      console.error("[OAuth] Callback failed", error);
-      return c.json({ error: "OAuth callback failed" }, 500);
+      // Redirect to dashboard
+      return c.redirect("/dashboard");
+    } catch (err) {
+      console.error("[auth] OAuth callback error:", err);
+      return c.json({ error: "Authentication failed" }, 500);
     }
   };
 }
 
-export { exchangeAuthCode, verifyAccessToken };
+export async function signOut(c: Context): Promise<void> {
+  clearSessionCookie(c);
+}
