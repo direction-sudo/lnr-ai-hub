@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { Routes, Route, Link, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Home, Bot, MessageSquare, Plus, Search,
-  Send, Paperclip, ChevronLeft, Sparkles, Star, Wand2,
+  Sparkles, Star, Wand2,
   Users, Instagram, PenTool, Target, BarChart3,
   Menu, ChevronRight
 } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
-import type { Message } from '@/types';
+import AgentDetailPage from './AgentDetailPage';
 
 const ALL_AVATARS = [
   '/images/avatar-nora.png',
@@ -80,9 +80,9 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
           <div className="space-y-0.5 mb-3">
             {defaultAgents.map(agent => (
               <button key={agent.id}
-                onClick={() => { navigate(`/dashboard/chat/${agent.id}`); onClose(); }}
+                onClick={() => { navigate(`/dashboard/agent/${agent.id}`); onClose(); }}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition-all duration-200 text-left ${
-                  location.pathname.includes(`/chat/${agent.id}`) ? 'bg-[rgba(212,168,83,0.06)]' : 'hover:bg-[rgba(255,255,255,0.02)]'
+                  location.pathname.includes(`/agent/${agent.id}`) ? 'bg-[rgba(212,168,83,0.06)]' : 'hover:bg-[rgba(255,255,255,0.02)]'
                 }`}
               >
                 <div className="relative flex-shrink-0">
@@ -103,7 +103,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
               <div className="space-y-0.5">
                 {customAgents.map(agent => (
                   <button key={agent.id}
-                    onClick={() => { navigate(`/dashboard/chat/${agent.id}`); onClose(); }}
+                    onClick={() => { navigate(`/dashboard/agent/${agent.id}`); onClose(); }}
                     className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-[rgba(255,255,255,0.02)] transition-all text-left"
                   >
                     <img src={agent.avatar || '/images/avatar-placeholder-1.png'} alt={agent.name} className="w-7 h-7 rounded-full object-cover" />
@@ -196,7 +196,7 @@ function AgentListView() {
                   <span key={cap} className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-[rgba(212,168,83,0.06)] text-[#D4A853]/80 border border-[rgba(212,168,83,0.1)]">{cap}</span>
                 ))}
               </div>
-              <button onClick={() => navigate(`/dashboard/chat/${agent.id}`)}
+              <button onClick={() => navigate(`/dashboard/agent/${agent.id}`)}
                 className="w-full btn-gold text-sm py-2.5 rounded-xl">
                 <span className="relative z-10">Discuter avec {agent.name}</span>
               </button>
@@ -218,7 +218,7 @@ function AgentListView() {
                     <p className="text-[10px] text-[#D4A853]">{agent.role}</p>
                   </div>
                 </div>
-                <button onClick={() => navigate(`/dashboard/chat/${agent.id}`)}
+                <button onClick={() => navigate(`/dashboard/agent/${agent.id}`)}
                   className="w-full text-sm font-medium text-[#D4A853] border border-[#D4A853]/20 py-2 rounded-xl hover:bg-[rgba(212,168,83,0.06)] transition-all">
                   Discuter
                 </button>
@@ -235,124 +235,6 @@ function AgentListView() {
         </div>
         <span className="text-sm font-medium text-[#D4A853]">Créer un nouvel agent</span>
       </button>
-    </div>
-  );
-}
-
-/* ═══════════ CHAT PAGE ═══════════ */
-function ChatPage() {
-  const { agentId } = useParams<{ agentId: string }>();
-  const navigate = useNavigate();
-  const { agents, sendMessage, isSending } = useChat();
-  const [input, setInput] = useState('');
-
-  const agent = agents.find(a => a.id === Number(agentId));
-  const agentIdNum = agent?.id ?? null;
-
-  const { data: messages = [] } = useChat().getHistoryQuery(agentIdNum);
-
-  const handleSend = (text?: string) => {
-    const content = text || input;
-    if (!content.trim() || !agentIdNum) return;
-    sendMessage(agentIdNum, content.trim());
-    setInput('');
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
-  };
-
-  const quickPrompts = agent?.slug === 'nora'
-    ? ['Rédige 3 posts LinkedIn', 'Crée mon calendrier éditorial', 'Analyse mes performances', 'Rédige une newsletter']
-    : agent?.slug === 'leo'
-    ? ['Rédige une offre d\'emploi', 'Screening de CV', 'Prépare un onboarding', 'Rapport RH mensuel']
-    : [];
-
-  const formatTime = (d: Date) => new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-
-  return (
-    <div className="h-[calc(100vh-0px)] lg:h-screen flex flex-col" style={{ background: 'rgba(10,10,11,0.88)' }}>
-      {/* Header */}
-      <div className="h-16 flex items-center gap-4 px-6 border-b border-white/[0.04] flex-shrink-0"
-        style={{ background: 'rgba(13,13,15,0.6)', backdropFilter: 'blur(20px)' }}>
-        <button onClick={() => navigate('/dashboard/agents')} className="lg:hidden text-[#52525B] hover:text-[#FAFAFA] transition-colors">
-          <ChevronLeft size={20} />
-        </button>
-        <div className="relative">
-          <img src={agent?.avatar || ''} alt={agent?.name} className="w-10 h-10 rounded-full object-cover ring-1 ring-[#D4A853]/20" />
-          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#22C55E] rounded-full ring-2 ring-[#0A0A0B]" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-[#FAFAFA]">{agent?.name}</p>
-          <p className="text-xs text-[#22C55E]">{agent?.role}</p>
-        </div>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 lg:px-6 py-6 space-y-4">
-        {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center px-4">
-            <div className="w-24 h-24 rounded-full bg-[rgba(212,168,83,0.06)] border border-[rgba(212,168,83,0.1)] flex items-center justify-center mb-6">
-              <img src={agent?.avatar || ''} alt={agent?.name} className="w-16 h-16 rounded-full object-cover" />
-            </div>
-            <h3 className="text-xl font-bold text-[#FAFAFA] mb-2" style={{ fontFamily: 'var(--font-heading)' }}>{agent?.name} est prêt</h3>
-            <p className="text-sm text-[#52525B] max-w-sm mb-6">{agent?.description}</p>
-            {quickPrompts.length > 0 && (
-              <div className="flex flex-wrap gap-2 justify-center max-w-lg">
-                {quickPrompts.map(prompt => (
-                  <button key={prompt} onClick={() => handleSend(prompt)}
-                    className="px-4 py-2.5 text-xs font-medium rounded-full bg-[rgba(212,168,83,0.06)] text-[#D4A853] border border-[rgba(212,168,83,0.12)] hover:bg-[rgba(212,168,83,0.12)] hover:border-[rgba(212,168,83,0.25)] transition-all text-left">
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          messages.map((msg: Message) => (
-            <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} gap-2.5`}>
-              {msg.sender === 'agent' && (
-                <img src={agent?.avatar || ''} alt={agent?.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-1 ring-1 ring-white/5" />
-              )}
-              <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                msg.sender === 'user'
-                  ? 'gold-gradient text-[#0A0A0B] font-semibold rounded-tr-sm shadow-lg shadow-[rgba(212,168,83,0.15)]'
-                  : 'bg-[#18181B] border border-white/[0.04] text-[#FAFAFA] rounded-tl-sm'
-              }`}>
-                {msg.content}
-                <div className={`text-[10px] mt-1.5 ${msg.sender === 'user' ? 'text-[#0A0A0B]/50' : 'text-[#3F3F46]'}`}>{formatTime(msg.createdAt)}</div>
-              </div>
-            </div>
-          ))
-        )}
-
-        {isSending && (
-          <div className="flex items-start gap-2.5">
-            <img src={agent?.avatar || ''} alt="" className="w-8 h-8 rounded-full object-cover ring-1 ring-white/5" />
-            <div className="bg-[#18181B] border border-white/[0.04] rounded-2xl rounded-tl-sm px-5 py-3.5 flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-[#D4A853]/40 rounded-full typing-dot" />
-              <span className="w-2 h-2 bg-[#D4A853]/40 rounded-full typing-dot" />
-              <span className="w-2 h-2 bg-[#D4A853]/40 rounded-full typing-dot" />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Input */}
-      <div className="flex-shrink-0 border-t border-white/[0.04] px-4 lg:px-6 py-4" style={{ background: 'rgba(13,13,15,0.5)', backdropFilter: 'blur(20px)' }}>
-        <div className="flex items-center gap-3">
-          <button className="w-10 h-10 flex items-center justify-center rounded-full text-[#3F3F46] hover:text-[#A1A1AA] hover:bg-white/[0.03] transition-all flex-shrink-0">
-            <Paperclip size={18} />
-          </button>
-          <input type="text" value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
-            placeholder={`Message à ${agent?.name}...`}
-            className="flex-1 h-12 bg-[#18181B] border border-white/[0.05] rounded-full px-5 text-sm text-[#FAFAFA] placeholder-[#3F3F46] focus:outline-none focus:border-[#D4A853]/30 transition-all" />
-          <button onClick={() => handleSend()} disabled={!input.trim() || isSending}
-            className="w-11 h-11 btn-gold rounded-full flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0">
-            <span className="relative z-10"><Send size={16} className="text-[#0A0A0B]" /></span>
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
@@ -515,7 +397,7 @@ function DashboardHome() {
       {/* Agent cards */}
       <div className="grid sm:grid-cols-2 gap-4 mb-8">
         {defaults.map(agent => (
-          <button key={agent.id} onClick={() => navigate(`/dashboard/chat/${agent.id}`)}
+          <button key={agent.id} onClick={() => navigate(`/dashboard/agent/${agent.id}`)}
             className="glass-card p-5 text-left border-glow relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-[rgba(212,168,83,0.02)] rounded-full -translate-y-1/2 translate-x-1/2" />
             <div className="relative flex items-center gap-4">
@@ -578,7 +460,7 @@ function DashboardHome() {
 export default function DashboardPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
-  const isChat = location.pathname.includes('/chat/');
+  const isAgent = location.pathname.includes('/agent/');
 
   return (
     <div className="relative min-h-screen">
@@ -591,11 +473,11 @@ export default function DashboardPage() {
           <span className="ml-3 text-sm font-bold text-[#FAFAFA]">LNR AI HUB</span>
         </div>
 
-        <main className={isChat ? 'fixed inset-0 lg:relative lg:inset-auto z-30 bg-[#0A0A0B]' : ''}>
+        <main className={isAgent ? 'fixed inset-0 lg:relative lg:inset-auto z-30 bg-[#0A0A0B]' : ''}>
           <Routes>
             <Route path="/" element={<DashboardHome />} />
             <Route path="/agents" element={<AgentListView />} />
-            <Route path="/chat/:agentId" element={<ChatPage />} />
+            <Route path="/agent/:agentId" element={<AgentDetailPage />} />
             <Route path="/create" element={<CreateAgentView />} />
           </Routes>
         </main>

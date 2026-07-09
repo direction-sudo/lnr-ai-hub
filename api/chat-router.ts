@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
-import { agents, chatMessages } from "@db/schema";
-import { eq, desc } from "drizzle-orm";
+import { agents, chatMessages, agentAnalytics } from "@db/schema";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { chatCompletion, AGENT_SYSTEM_PROMPTS } from "./ai-service";
 import type { ChatCompletionMessage } from "./ai-service";
 
@@ -58,12 +58,24 @@ export const chatRouter = createRouter({
       const agent = agentRows[0];
       if (!agent) throw new Error("Agent not found");
 
-      // 2. Save user message
+      // 2. Save user message + track
       await db.insert(chatMessages).values({
         agentId: input.agentId,
         content: input.content,
         sender: "user",
       });
+
+      // Track user message in analytics
+      const today = new Date().toISOString().split("T")[0];
+      const existing = await db.select().from(agentAnalytics)
+        .where(and(eq(agentAnalytics.agentId, input.agentId), eq(agentAnalytics.date, today)));
+      if (existing.length > 0) {
+        await db.update(agentAnalytics)
+          .set({ messagesSent: (existing[0].messagesSent ?? 0) + 1 })
+          .where(eq(agentAnalytics.id, existing[0].id));
+      } else {
+        await db.insert(agentAnalytics).values({ agentId: input.agentId, date: today, messagesSent: 1, messagesReceived: 0, tokensUsed: 0 });
+      }
 
       // 3. Fetch recent history (last 20 messages for context)
       const history = await db
@@ -109,12 +121,21 @@ export const chatRouter = createRouter({
         aiResponse = `Je suis ${agent.name}, ${agent.role}. Pour que je puisse vous aider avec mes capacités d'IA avancées, veuillez vous connecter via le bouton en haut à droite. \n\nEn attendant, voici ce que je peux faire pour vous :\n\n${(agent.capabilities as string[] || []).map(c => `• ${c}`).join('\n')}`;
       }
 
-      // 6. Save AI response
+      // 6. Save AI response + track
       await db.insert(chatMessages).values({
         agentId: input.agentId,
         content: aiResponse,
         sender: "agent",
       });
+
+      // Track AI response in analytics
+      const existing2 = await db.select().from(agentAnalytics)
+        .where(and(eq(agentAnalytics.agentId, input.agentId), eq(agentAnalytics.date, today)));
+      if (existing2.length > 0) {
+        await db.update(agentAnalytics)
+          .set({ messagesReceived: (existing2[0].messagesReceived ?? 0) + 1 })
+          .where(eq(agentAnalytics.id, existing2[0].id));
+      }
 
       return { response: aiResponse };
     }),

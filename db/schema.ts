@@ -7,6 +7,7 @@ import {
   timestamp,
   bigint,
   json,
+  int,
 } from "drizzle-orm/mysql-core";
 
 // ─── Users (auth) ───
@@ -37,6 +38,7 @@ export const agents = mysqlTable("agents", {
   capabilities: json("capabilities").$type<string[]>(),
   tools: json("tools").$type<string[]>(),
   personality: varchar("personality", { length: 20 }).default("balanced"),
+  aiModel: varchar("aiModel", { length: 50 }).default("kimi-latest"),
   isDefault: mysqlEnum("isDefault", ["true", "false"]).default("false").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull().$onUpdate(() => new Date()),
@@ -57,3 +59,40 @@ export const chatMessages = mysqlTable("chat_messages", {
 
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = typeof chatMessages.$inferInsert;
+
+// ─── Knowledge Docs ───
+export const knowledgeDocs = mysqlTable("knowledge_docs", {
+  id: serial("id").primaryKey(),
+  agentId: bigint("agentId", { mode: "number", unsigned: true }).notNull(),
+  filename: varchar("filename", { length: 255 }).notNull(),
+  content: text("content"),
+  size: int("size"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type KnowledgeDoc = typeof knowledgeDocs.$inferSelect;
+
+// ─── Agent Analytics ───
+export const agentAnalytics = mysqlTable("agent_analytics", {
+  id: serial("id").primaryKey(),
+  agentId: bigint("agentId", { mode: "number", unsigned: true }).notNull(),
+  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+  messagesSent: int("messagesSent").default(0),
+  messagesReceived: int("messagesReceived").default(0),
+  tokensUsed: int("tokensUsed").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AgentAnalytics = typeof agentAnalytics.$inferSelect;
+
+// ─── Agent Calls ───
+export const agentCalls = mysqlTable("agent_calls", {
+  id: serial("id").primaryKey(),
+  agentId: bigint("agentId", { mode: "number", unsigned: true }).notNull(),
+  type: mysqlEnum("type", ["audio", "video"]).default("audio").notNull(),
+  duration: int("duration").default(0), // seconds
+  status: mysqlEnum("status", ["completed", "missed", "ongoing"]).default("completed").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AgentCall = typeof agentCalls.$inferSelect;
