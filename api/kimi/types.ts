@@ -9,6 +9,7 @@ export type TokenResponse = {
 export type SessionPayload = {
   unionId: string;
   clientId: string;
+  accessToken: string;
 };
 
 export type UserProfile = {

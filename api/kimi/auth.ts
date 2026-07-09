@@ -111,6 +111,7 @@ export function createOAuthCallbackHandler() {
       const token = await signSessionToken({
         unionId: userId,
         clientId: env.appId,
+        accessToken: tokenResp.access_token,
       });
 
       const cookieOpts = getSessionCookieOptions(c.req.raw.headers);

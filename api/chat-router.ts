@@ -47,7 +47,7 @@ export const chatRouter = createRouter({
         content: z.string().min(1).max(4000),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = getDb();
 
       // 1. Fetch agent config
@@ -90,17 +90,23 @@ export const chatRouter = createRouter({
         })),
       ];
 
-      // 5. Call Kimi AI
+      // 5. Call Kimi AI with user's access token
       let aiResponse: string;
-      try {
-        aiResponse = await chatCompletion(apiMessages, {
-          temperature: 0.75,
-          maxTokens: 2000,
-        });
-      } catch {
-        // Fallback response if API fails
-        aiResponse =
-          "Désolé, je rencontre un problème de connexion avec mon service IA. Veuillez réessayer dans un moment.";
+      
+      if (ctx.accessToken) {
+        // User is authenticated — use their token
+        try {
+          aiResponse = await chatCompletion(ctx.accessToken, apiMessages, {
+            temperature: 0.75,
+            maxTokens: 2000,
+          });
+        } catch (err) {
+          console.error("[AI] Error calling Kimi:", err);
+          aiResponse = "Désolé, je rencontre un problème technique avec le service IA. Veuillez réessayer.";
+        }
+      } else {
+        // User not authenticated — return helpful message
+        aiResponse = `Je suis ${agent.name}, ${agent.role}. Pour que je puisse vous aider avec mes capacités d'IA avancées, veuillez vous connecter via le bouton en haut à droite. \n\nEn attendant, voici ce que je peux faire pour vous :\n\n${(agent.capabilities as string[] || []).map(c => `• ${c}`).join('\n')}`;
       }
 
       // 6. Save AI response
