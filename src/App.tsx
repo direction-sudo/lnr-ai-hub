@@ -1,10 +1,20 @@
-import { Routes, Route } from 'react-router'
-import Home from './pages/Home'
+import { Routes, Route } from 'react-router-dom';
+import StarNestBackground from '@/components/StarNestBackground';
+import LandingPage from '@/pages/LandingPage';
+import DashboardPage from '@/pages/DashboardPage';
 
-export default function App() {
+function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-    </Routes>
-  )
+    <>
+      <StarNestBackground />
+      <div className="relative z-10">
+        <Routes>
+          <Route path="/*" element={<LandingPage />} />
+          <Route path="/dashboard/*" element={<DashboardPage />} />
+        </Routes>
+      </div>
+    </>
+  );
 }
+
+export default App;
