@@ -1,30 +1,30 @@
-import { setCookie } from "hono/cookie";
-import { getCookie } from "hono/cookie";
-import { deleteCookie } from "hono/cookie";
-import { verifySessionToken } from "./session";
+import { setCookie, deleteCookie } from "hono/cookie";
+import { verifySessionToken, signSessionToken } from "./session";
 import { env } from "../lib/env";
 import { getDb } from "../queries/connection";
 import { users } from "@db/schema";
 import { eq } from "drizzle-orm";
-import { signSessionToken } from "./session";
 import { Paths } from "@contracts/constants";
 import type { Context } from "hono";
 import type { User } from "@db/schema";
 
+/**
+ * Extract and verify session from request headers.
+ * Returns the user + access token if valid.
+ */
 export async function authenticateRequest(
   headers: Headers,
-): Promise<User | undefined> {
-  // Extract session from cookie header manually since we don't have a Hono context here
+): Promise<{ user: User; accessToken?: string } | undefined> {
   const cookieHeader = headers.get("cookie");
   if (!cookieHeader) return undefined;
 
   const sessionMatch = cookieHeader.match(/session=([^;]+)/);
   if (!sessionMatch) return undefined;
 
-  const token = sessionMatch[1];
+  const token = decodeURIComponent(sessionMatch[1]);
   if (!token) return undefined;
 
-  const payload = await verifySessionToken(decodeURIComponent(token));
+  const payload = await verifySessionToken(token);
   if (!payload) return undefined;
 
   const db = getDb();
@@ -33,10 +33,14 @@ export async function authenticateRequest(
     .from(users)
     .where(eq(users.unionId, payload.unionId));
 
-  return rows[0] ?? undefined;
+  const user = rows[0];
+  if (!user) return undefined;
+
+  return { user, accessToken: payload.accessToken };
 }
 
-// Helper to set secure cookie
+// ─── Cookie helpers ───
+
 export function setSessionCookie(c: Context, token: string) {
   setCookie(c, "session", token, {
     httpOnly: true,
@@ -51,16 +55,16 @@ export function clearSessionCookie(c: Context) {
   deleteCookie(c, "session", { path: "/" });
 }
 
-// OAuth callback handler
+// ─── OAuth callback handler ───
+
 export function createOAuthCallbackHandler() {
   return async (c: Context) => {
     const code = c.req.query("code");
     if (!code) {
-      return c.json({ error: "No code provided" }, 400);
+      return c.json({ error: "No authorization code provided" }, 400);
     }
 
     try {
-      // Exchange code for token
       const tokenRes = await fetch(`${env.kimiAuthUrl}/api/oauth/token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,6 +77,7 @@ export function createOAuthCallbackHandler() {
       });
 
       if (!tokenRes.ok) {
+        console.error("[auth] Token exchange failed:", await tokenRes.text());
         return c.json({ error: "Token exchange failed" }, 401);
       }
 
@@ -81,12 +86,12 @@ export function createOAuthCallbackHandler() {
         refresh_token?: string;
       };
 
-      // Get user info
       const userRes = await fetch(`${env.kimiAuthUrl}/api/oauth/user`, {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
       });
 
       if (!userRes.ok) {
+        console.error("[auth] Failed to get user info:", await userRes.text());
         return c.json({ error: "Failed to get user info" }, 401);
       }
 
@@ -97,7 +102,6 @@ export function createOAuthCallbackHandler() {
         avatar_url?: string;
       };
 
-      // Upsert user
       const db = getDb();
       const existing = await db
         .select()
@@ -107,7 +111,7 @@ export function createOAuthCallbackHandler() {
       if (existing.length === 0) {
         await db.insert(users).values({
           unionId: userData.union_id,
-          name: userData.name || "User",
+          name: userData.name || "Utilisateur",
           email: userData.email,
           avatar: userData.avatar_url,
           role: "user",
@@ -124,7 +128,6 @@ export function createOAuthCallbackHandler() {
           .where(eq(users.id, existing[0].id));
       }
 
-      // Sign session token with access token for AI calls
       const sessionToken = await signSessionToken({
         unionId: userData.union_id,
         clientId: env.appId,
@@ -132,16 +135,10 @@ export function createOAuthCallbackHandler() {
       });
 
       setSessionCookie(c, sessionToken);
-
-      // Redirect to dashboard
       return c.redirect("/dashboard");
     } catch (err) {
       console.error("[auth] OAuth callback error:", err);
       return c.json({ error: "Authentication failed" }, 500);
     }
   };
-}
-
-export async function signOut(c: Context): Promise<void> {
-  clearSessionCookie(c);
 }

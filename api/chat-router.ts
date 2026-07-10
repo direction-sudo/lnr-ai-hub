@@ -30,7 +30,7 @@ export const chatRouter = createRouter({
   // ─── Get chat history (auth required) ───
   getHistory: authedQuery
     .input(z.object({ agentId: z.number().int().positive() }))
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input }) => {
       const db = getDb();
       const rows = await db
         .select()
@@ -52,10 +52,16 @@ export const chatRouter = createRouter({
       const db = getDb();
       const userId = ctx.user.id;
 
-      // Extra rate limit per user
+      // ─── Rate limiting per user (60 req/min) ───
       const userRate = checkRateLimit(`user:${userId}:chat`, 60, 60 * 1000);
       if (!userRate.allowed) {
-        return { response: "Vous avez atteint la limite de messages par minute. Veuillez patienter." };
+        return { response: "Vous avez atteint la limite de 60 messages par minute. Veuillez patienter." };
+      }
+
+      // ─── Rate limiting per agent (100 req/min) ───
+      const agentRate = checkRateLimit(`agent:${input.agentId}:chat`, 100, 60 * 1000);
+      if (!agentRate.allowed) {
+        return { response: "Cet agent est temporairement surchargé. Veuillez réessayer dans un moment." };
       }
 
       // 1. Fetch agent config
@@ -66,7 +72,7 @@ export const chatRouter = createRouter({
       const agent = agentRows[0];
       if (!agent) throw new Error("Agent not found");
 
-      // 2. Save user message + track
+      // 2. Save user message + track analytics
       await db.insert(chatMessages).values({
         agentId: input.agentId,
         userId,
@@ -74,7 +80,7 @@ export const chatRouter = createRouter({
         sender: "user",
       });
 
-      // Track user message in analytics
+      // Track in analytics
       const today = new Date().toISOString().split("T")[0];
       const existing = await db.select().from(agentAnalytics)
         .where(and(eq(agentAnalytics.agentId, input.agentId), eq(agentAnalytics.date, today)));
@@ -124,10 +130,10 @@ export const chatRouter = createRouter({
           aiResponse = "Désolé, je rencontre un problème technique avec le service IA. Veuillez réessayer dans un moment.";
         }
       } else {
-        aiResponse = `Je suis ${agent.name}, ${agent.role}.\n\nPour accéder à mes capacités d'IA avancées, veuillez vous reconnecter.\n\nCe que je peux faire :\n${(agent.capabilities as string[] || []).map(c => `• ${c}`).join('\n')}`;
+        aiResponse = `Je suis ${agent.name}, ${agent.role}.\n\nPour accéder à mes capacités d'IA avancées, veuillez vous connecter.\n\nCe que je peux faire :\n${(agent.capabilities as string[] || []).map(c => `• ${c}`).join('\n')}`;
       }
 
-      // 6. Save AI response + track
+      // 6. Save AI response + track analytics
       await db.insert(chatMessages).values({
         agentId: input.agentId,
         userId,
@@ -161,7 +167,7 @@ export const chatRouter = createRouter({
         personality: z.enum(["professional", "friendly", "creative", "balanced"]).optional(),
       })
     )
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input }) => {
       const db = getDb();
       // Check slug uniqueness
       const existing = await db.select().from(agents).where(eq(agents.slug, input.slug));

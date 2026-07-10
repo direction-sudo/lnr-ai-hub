@@ -9,12 +9,12 @@ import { createContext } from "./context";
 import { env } from "./lib/env";
 import { createOAuthCallbackHandler } from "./kimi/auth";
 import { Paths } from "@contracts/constants";
-import { checkRateLimit } from "./rate-limit";
 
 const app = new Hono<{ Bindings: HttpBindings }>();
 
 // ─── 1. Security Headers (CSP, HSTS, X-Frame-Options, etc.) ───
 app.use(
+  "*",
   secureHeaders({
     contentSecurityPolicy: {
       defaultSrc: ["'self'"],
@@ -53,36 +53,10 @@ app.use(
 // ─── 3. Body size limit ───
 app.use(bodyLimit({ maxSize: 10 * 1024 * 1024 }));
 
-// ─── 4. Rate limiting on AI chat endpoint ───
-app.use("/api/trpc/chat.sendMessage", async (c, next) => {
-  const clientIp =
-    c.req.header("x-forwarded-for") ||
-    c.req.header("x-real-ip") ||
-    "anonymous";
-  const rate = checkRateLimit(`chat:${clientIp}`, 30, 60 * 1000);
-
-  c.header("X-RateLimit-Limit", "30");
-  c.header("X-RateLimit-Remaining", String(rate.remaining));
-  c.header("X-RateLimit-Reset", String(rate.resetAt));
-
-  if (!rate.allowed) {
-    return c.json(
-      {
-        error: {
-          message: "Too many requests. Please slow down.",
-          code: "TOO_MANY_REQUESTS",
-        },
-      },
-      429
-    );
-  }
-  await next();
-});
-
-// ─── 5. OAuth callback ───
+// ─── 4. OAuth callback ───
 app.get(Paths.oauthCallback, createOAuthCallbackHandler());
 
-// ─── 6. tRPC handler ───
+// ─── 5. tRPC handler ───
 app.use("/api/trpc/*", async (c) => {
   return fetchRequestHandler({
     endpoint: "/api/trpc",
@@ -92,7 +66,7 @@ app.use("/api/trpc/*", async (c) => {
   });
 });
 
-// ─── 7. Catch-all ───
+// ─── 6. Catch-all ───
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
 export default app;
