@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router';
 import StarNestBackground from '@/components/StarNestBackground';
 import LandingPage from '@/pages/LandingPage';
 import DashboardPage from '@/pages/DashboardPage';
@@ -11,7 +11,7 @@ function App() {
       <StarNestBackground />
       <div className="relative z-10">
         <Routes>
-          <Route path="/*" element={<LandingPage />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/dashboard/*" element={<DashboardPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="*" element={<NotFound />} />

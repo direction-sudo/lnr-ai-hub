@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import {
   MessageSquare, Phone, Video, BookOpen, BarChart3, Settings,
   Send, Paperclip, ChevronLeft, Upload, Trash2, Clock,
