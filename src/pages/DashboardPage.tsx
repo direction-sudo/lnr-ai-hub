@@ -4,10 +4,11 @@ import {
   Home, Bot, MessageSquare, Plus, Search,
   Sparkles, Star, Wand2,
   Users, Instagram, PenTool, Target, BarChart3,
-  Menu, ChevronRight
+  Menu, ChevronRight, Link2
 } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import AgentDetailPage from './AgentDetailPage';
+import IntegrationsPage from './IntegrationsPage';
 
 const ALL_AVATARS = [
   '/images/avatar-nora.png',
@@ -28,6 +29,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
   const navItems = [
     { path: '/dashboard', label: 'Accueil', icon: Home },
     { path: '/dashboard/agents', label: 'Mes Agents', icon: Bot },
+    { path: '/dashboard/integrations', label: 'Intégrations', icon: Link2 },
     { path: '/dashboard/create', label: 'Créer un agent', icon: Plus },
   ];
 
@@ -478,6 +480,7 @@ export default function DashboardPage() {
             <Route path="/" element={<DashboardHome />} />
             <Route path="/agents" element={<AgentListView />} />
             <Route path="/agent/:agentId" element={<AgentDetailPage />} />
+            <Route path="/integrations" element={<IntegrationsPage />} />
             <Route path="/create" element={<CreateAgentView />} />
           </Routes>
         </main>
