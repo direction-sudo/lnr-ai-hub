@@ -6,6 +6,7 @@ import {
   FileText, Target, Instagram, BarChart3, TrendingUp,
   Shield, Globe, Clock
 } from 'lucide-react';
+import BrainNeurons from '@/components/BrainNeurons';
 
 /* ─── Scroll Reveal Hook ─── */
 function useScrollReveal() {
@@ -148,13 +149,10 @@ function HeroSection() {
           </div>
         </div>
 
-        {/* Right: Illustration */}
-        <div className="order-1 lg:order-2 animate-fade-in-left delay-300 flex justify-center" style={{ opacity: 0 }}>
-          <div className="relative">
-            <div className="absolute inset-0 rounded-3xl opacity-30"
-              style={{ background: 'radial-gradient(circle at center, rgba(212,168,83,0.2), transparent 70%)', filter: 'blur(40px)' }} />
-            <img src="/images/hero-illustration.jpg" alt="AI Neural Network"
-              className="relative rounded-3xl w-full max-w-lg border border-white/5 shadow-2xl" />
+        {/* Right: 3D Brain Neurons */}
+        <div className="order-1 lg:order-2 animate-fade-in-left delay-300 flex justify-center relative" style={{ opacity: 0, minHeight: '400px' }}>
+          <BrainNeurons />
+          <div className="relative z-10 pointer-events-none">
             {/* Floating badges */}
             <div className="absolute -bottom-4 -left-4 glass-card px-4 py-2 flex items-center gap-2 float-animation">
               <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
