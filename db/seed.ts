@@ -18,7 +18,7 @@ async function seed() {
       role: "Agent Communication & Réseaux Sociaux",
       description:
         "Votre community manager IA. Nora rédige vos posts, crée vos visuels, planifie votre calendrier éditorial et analyse vos performances sur LinkedIn, Instagram, Facebook et TikTok.",
-      avatar: "/images/avatar-nora.png",
+      avatar: "./images/avatar-nora.png",
       systemPrompt: `Tu es Nora, une experte en communication digitale et réseaux sociaux travaillant pour LNR Finance. Tu maîtrises :
 
 - **Rédaction de contenu** : posts LinkedIn, Instagram, Facebook, TikTok, newsletters, blogs
@@ -38,7 +38,7 @@ Ton style : professionnel mais engageant, tu connais les codes de chaque réseau
       role: "Agent Ressources Humaines",
       description:
         "Votre responsable RH IA. Leo gère vos recrutements de A à Z : rédaction d'offres, screening de CV, planification d'entretiens, onboarding des nouveaux et suivi des collaborateurs.",
-      avatar: "/images/avatar-leo.png",
+      avatar: "./images/avatar-leo.png",
       systemPrompt: `Tu es Leo, un expert en Ressources Humaines et recrutement travaillant pour LNR Finance. Tu maîtrises :
 
 - **Rédaction d'offres d'emploi** : fiches de poste attractives, optimisées SEO, publiées sur les bons canaux

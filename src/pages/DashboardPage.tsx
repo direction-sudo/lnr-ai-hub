@@ -4,31 +4,34 @@ import {
   Home, Bot, MessageSquare, Plus, Search,
   Sparkles, Star, Wand2,
   Users, Instagram, PenTool, Target, BarChart3,
-  Menu, ChevronRight, Link2
+  Menu, ChevronRight, Link2, Key, Megaphone
 } from 'lucide-react';
+import ApiKeyModal from '@/components/ApiKeyModal';
 import { useChat } from '@/hooks/useChat';
 import AgentDetailPage from './AgentDetailPage';
 import IntegrationsPage from './IntegrationsPage';
+import CampaignsPage from './CampaignsPage';
 
 const ALL_AVATARS = [
-  '/images/avatar-nora.png',
-  '/images/avatar-leo.png',
-  '/images/avatar-placeholder-1.png',
-  '/images/avatar-placeholder-2.png',
-  '/images/avatar-placeholder-3.png',
+  './images/avatar-nora.png',
+  './images/avatar-leo.png',
+  './images/avatar-placeholder-1.png',
+  './images/avatar-placeholder-2.png',
+  './images/avatar-placeholder-3.png',
 ];
 
 const CAP_OPTIONS = ['Rédaction', 'Visuels', 'Analytics', 'Community Mgmt', 'Recrutement', 'Screening', 'Entretiens', 'Onboarding', 'Planning RH', 'Reporting'];
 
 /* ═══════════ SIDEBAR ═══════════ */
-function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
+function Sidebar({ mobileOpen, onClose, onOpenApiKey }: { mobileOpen: boolean; onClose: () => void; onOpenApiKey: () => void }) {
   const location = useLocation();
-  const { agents, isLoading } = useChat();
+  const { agents } = useChat();
   const navigate = useNavigate();
 
   const navItems = [
     { path: '/dashboard', label: 'Accueil', icon: Home },
     { path: '/dashboard/agents', label: 'Mes Agents', icon: Bot },
+    { path: '/dashboard/campaigns', label: 'Campagnes', icon: Megaphone },
     { path: '/dashboard/integrations', label: 'Intégrations', icon: Link2 },
     { path: '/dashboard/create', label: 'Créer un agent', icon: Plus },
   ];
@@ -46,9 +49,8 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
         style={{ background: 'rgba(13,13,15,0.97)', borderRight: '1px solid rgba(255,255,255,0.04)' }}
       >
         <div className="p-4">
-          <Link to="/" className="flex items-center gap-2 mb-5 group">
-            <span className="text-lg font-extrabold text-[#D4A853] group-hover:gold-glow-text transition-all" style={{ fontFamily: 'var(--font-heading)' }}>LNR</span>
-            <span className="text-sm font-medium text-[#FAFAFA]">AI HUB</span>
+          <Link to="/" className="flex items-center mb-5 group">
+            <img src="./images/lnr-ai-hub-logo.png" alt="LNR AI HUB" className="h-9 w-auto transition-all group-hover:drop-shadow-[0_0_8px_rgba(212,168,83,0.4)]" />
           </Link>
 
           <button
@@ -88,7 +90,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
                 }`}
               >
                 <div className="relative flex-shrink-0">
-                  <img src={agent.avatar || '/images/avatar-placeholder-1.png'} alt={agent.name} className="w-8 h-8 rounded-full object-cover ring-1 ring-white/5" />
+                  <img src={agent.avatar || './images/avatar-placeholder-1.png'} alt={agent.name} className="w-8 h-8 rounded-full object-cover ring-1 ring-white/5" />
                   <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#22C55E] rounded-full ring-2 ring-[#0D0D0F]" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -108,13 +110,27 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
                     onClick={() => { navigate(`/dashboard/agent/${agent.id}`); onClose(); }}
                     className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-[rgba(255,255,255,0.02)] transition-all text-left"
                   >
-                    <img src={agent.avatar || '/images/avatar-placeholder-1.png'} alt={agent.name} className="w-7 h-7 rounded-full object-cover" />
+                    <img src={agent.avatar || './images/avatar-placeholder-1.png'} alt={agent.name} className="w-7 h-7 rounded-full object-cover" />
                     <span className="text-[13px] text-[#A1A1AA] truncate">{agent.name}</span>
                   </button>
                 ))}
               </div>
             </>
           )}
+
+          {/* API Key config button */}
+          <button
+            onClick={() => { onOpenApiKey(); onClose(); }}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-[rgba(212,168,83,0.06)] transition-all text-left mt-3"
+          >
+            <div className="w-8 h-8 rounded-lg bg-[rgba(212,168,83,0.06)] border border-[rgba(212,168,83,0.1)] flex items-center justify-center flex-shrink-0">
+              <Key size={14} className="text-[#D4A853]" />
+            </div>
+            <div>
+              <p className="text-[13px] text-[#A1A1AA]">Configurer clé API</p>
+              <p className="text-[10px] text-[#3F3F46]">IA réelle Kimi</p>
+            </div>
+          </button>
 
           <div className="flex items-center gap-2.5 mt-4 pt-4 border-t border-white/[0.04]">
             <div className="w-8 h-8 rounded-full gold-gradient flex items-center justify-center text-[#0A0A0B] text-xs font-bold">RY</div>
@@ -214,7 +230,7 @@ function AgentListView() {
             {customs.map(agent => (
               <div key={agent.id} className="glass-card p-5">
                 <div className="flex items-center gap-3 mb-3">
-                  <img src={agent.avatar || '/images/avatar-placeholder-1.png'} alt={agent.name} className="w-10 h-10 rounded-full object-cover" />
+                  <img src={agent.avatar || './images/avatar-placeholder-1.png'} alt={agent.name} className="w-10 h-10 rounded-full object-cover" />
                   <div>
                     <h3 className="text-sm font-bold text-[#FAFAFA]">{agent.name}</h3>
                     <p className="text-[10px] text-[#D4A853]">{agent.role}</p>
@@ -461,18 +477,20 @@ function DashboardHome() {
 /* ═══════════ MAIN LAYOUT ═══════════ */
 export default function DashboardPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [apiKeyOpen, setApiKeyOpen] = useState(false);
   const location = useLocation();
   const isAgent = location.pathname.includes('/agent/');
 
   return (
     <div className="relative min-h-screen">
+      <ApiKeyModal isOpen={apiKeyOpen} onClose={() => setApiKeyOpen(false)} />
       <div className="lg:grid lg:grid-cols-[260px_1fr] min-h-screen">
-        <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
+        <Sidebar mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} onOpenApiKey={() => setApiKeyOpen(true)} />
 
         <div className="lg:hidden h-14 flex items-center px-4 border-b border-white/[0.04]"
           style={{ background: 'rgba(13,13,15,0.95)', backdropFilter: 'blur(20px)' }}>
           <button onClick={() => setMobileOpen(true)} className="w-10 h-10 flex items-center justify-center text-[#52525B]"><Menu size={20} /></button>
-          <span className="ml-3 text-sm font-bold text-[#FAFAFA]">LNR AI HUB</span>
+          <img src="./images/lnr-ai-hub-logo.png" alt="LNR AI HUB" className="h-7 w-auto ml-3" />
         </div>
 
         <main className={isAgent ? 'fixed inset-0 lg:relative lg:inset-auto z-30 bg-[#0A0A0B]' : ''}>
@@ -480,6 +498,7 @@ export default function DashboardPage() {
             <Route path="/" element={<DashboardHome />} />
             <Route path="/agents" element={<AgentListView />} />
             <Route path="/agent/:agentId" element={<AgentDetailPage />} />
+            <Route path="/campaigns" element={<CampaignsPage />} />
             <Route path="/integrations" element={<IntegrationsPage />} />
             <Route path="/create" element={<CreateAgentView />} />
           </Routes>

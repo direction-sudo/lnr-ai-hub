@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: lnr-ai-hub
+    runtime: docker
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        value: sqlite:/app/data/lnr-ai-hub.db
+      - key: APP_ID
+        sync: false
+      - key: APP_SECRET
+        sync: false
+      - key: KIMI_AUTH_URL
+        value: https://platform.kimi.ai
+      - key: KIMI_OPEN_URL
+        value: https://api.moonshot.ai
+    disk:
+      name: data
+      mountPath: /app/data
+      sizeGB: 1

@@ -185,8 +185,8 @@ export const chatRouter = createRouter({
         tools: input.tools ?? [],
         personality: input.personality ?? "balanced",
         isDefault: "false",
-      });
-      return { id: Number(result[0].insertId) };
+      }).returning({ id: agents.id });
+      return { id: result[0].id };
     }),
 
   // ─── Delete agent (auth required) ───

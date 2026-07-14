@@ -46,8 +46,7 @@ function Navbar() {
     <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${scrolled ? 'nav-glass' : 'bg-transparent'}`}>
       <div className="max-w-7xl mx-auto px-6 h-[68px] flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
-          <span className="text-xl font-extrabold text-[#D4A853] transition-all group-hover:gold-glow-text" style={{ fontFamily: 'var(--font-heading)' }}>LNR</span>
-          <span className="text-base font-medium text-[#FAFAFA]" style={{ fontFamily: 'var(--font-heading)' }}>AI HUB</span>
+          <img src="./images/lnr-ai-hub-logo.png" alt="LNR AI HUB" className="h-10 w-auto transition-all group-hover:drop-shadow-[0_0_8px_rgba(212,168,83,0.4)]" />
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
@@ -230,7 +229,7 @@ function NoraSection() {
             <div className="bg-[#0D0D0F] rounded-[13px] p-5">
               <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/[0.04]">
                 <div className="relative">
-                  <img src="/images/avatar-nora.png" alt="Nora" className="w-10 h-10 rounded-full ring-2 ring-[#D4A853]/20" />
+                  <img src="./images/avatar-nora.png" alt="Nora" className="w-10 h-10 rounded-full ring-2 ring-[#D4A853]/20" />
                   <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#22C55E] rounded-full ring-2 ring-[#0D0D0F]" />
                 </div>
                 <div>
@@ -245,7 +244,7 @@ function NoraSection() {
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
-                  <img src="/images/avatar-nora.png" alt="Nora" className="w-7 h-7 rounded-full mt-1 flex-shrink-0" />
+                  <img src="./images/avatar-nora.png" alt="Nora" className="w-7 h-7 rounded-full mt-1 flex-shrink-0" />
                   <div className="bg-[#18181B] border border-white/[0.04] text-[#FAFAFA] px-4 py-3 rounded-2xl rounded-tl-sm max-w-[92%] text-sm leading-relaxed">
                     <p className="text-[#D4A853] text-xs font-semibold mb-2">📝 3 versions prêtes :</p>
                     <p className="text-[#A1A1AA] text-xs mb-2"><strong className="text-[#FAFAFA]">1. Corporate</strong> — "Nous sommes fiers de vous annoncer le lancement de LNR AI Hub, notre plateforme d'agents IA autonomes..." 🚀</p>
@@ -293,7 +292,7 @@ function LeoSection() {
             <div className="bg-[#0D0D0F] rounded-[13px] p-5">
               <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/[0.04]">
                 <div className="relative">
-                  <img src="/images/avatar-leo.png" alt="Leo" className="w-10 h-10 rounded-full ring-2 ring-[#D4A853]/20" />
+                  <img src="./images/avatar-leo.png" alt="Leo" className="w-10 h-10 rounded-full ring-2 ring-[#D4A853]/20" />
                   <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#22C55E] rounded-full ring-2 ring-[#0D0D0F]" />
                 </div>
                 <div>
@@ -308,7 +307,7 @@ function LeoSection() {
                   </div>
                 </div>
                 <div className="flex items-start gap-2.5">
-                  <img src="/images/avatar-leo.png" alt="Leo" className="w-7 h-7 rounded-full mt-1 flex-shrink-0" />
+                  <img src="./images/avatar-leo.png" alt="Leo" className="w-7 h-7 rounded-full mt-1 flex-shrink-0" />
                   <div className="bg-[#18181B] border border-white/[0.04] text-[#FAFAFA] px-4 py-3 rounded-2xl rounded-tl-sm max-w-[92%] text-sm leading-relaxed">
                     <div className="grid grid-cols-3 gap-2 mb-3">
                       {[{n:'34',l:'CV reçus'},{n:'12',l:'Qualifiés',g:true},{n:'14',l:'Écartés',r:true}].map(s => (
@@ -437,7 +436,7 @@ function DashboardPreview() {
 
         <div className={`transition-all duration-1000 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
           <div className="glass-card p-2 max-w-5xl mx-auto">
-            <img src="/images/mockup-dashboard.jpg" alt="Dashboard LNR AI Hub"
+            <img src="./images/mockup-dashboard.jpg" alt="Dashboard LNR AI Hub"
               className="rounded-xl w-full border border-white/[0.03]" />
           </div>
         </div>

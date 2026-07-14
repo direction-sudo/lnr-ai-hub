@@ -34,8 +34,15 @@ app.use(
     xFrameOptions: "DENY",
     xContentTypeOptions: "nosniff",
     referrerPolicy: "strict-origin-when-cross-origin",
-    permissionsPolicy:
-      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()",
+    permissionsPolicy: {
+      camera: false,
+      microphone: false,
+      geolocation: false,
+      payment: false,
+      usb: false,
+      magnetometer: false,
+      gyroscope: false,
+    },
   })
 );
 
@@ -53,10 +60,53 @@ app.use(
 // ─── 3. Body size limit ───
 app.use(bodyLimit({ maxSize: 10 * 1024 * 1024 }));
 
-// ─── 4. OAuth callback ───
+// ─── 4. OAuth callback (Kimi) ───
 app.get(Paths.oauthCallback, createOAuthCallbackHandler());
 
-// ─── 5. tRPC handler ───
+// ─── 5. OAuth callbacks (Social platforms) ───
+// LinkedIn callback
+app.get("/api/oauth/callback/linkedin", async (c) => {
+  const code = c.req.query("code");
+  const state = c.req.query("state");
+  const error = c.req.query("error");
+
+  if (error) {
+    return c.redirect("/dashboard/integrations?error=linkedin_denied");
+  }
+  if (!code || !state) {
+    return c.redirect("/dashboard/integrations?error=missing_params");
+  }
+
+  // Redirect to dashboard with code and state as query params
+  // The frontend will then call the tRPC mutation to exchange the code
+  const redirectUrl = new URL("/dashboard/integrations", `${c.req.header("origin") ?? "http://localhost:3000"}`);
+  redirectUrl.searchParams.set("linkedin_code", code);
+  redirectUrl.searchParams.set("linkedin_state", state);
+
+  return c.redirect(redirectUrl.toString());
+});
+
+// Facebook callback
+app.get("/api/oauth/callback/facebook", async (c) => {
+  const code = c.req.query("code");
+  const state = c.req.query("state");
+  const error = c.req.query("error");
+
+  if (error) {
+    return c.redirect("/dashboard/integrations?error=facebook_denied");
+  }
+  if (!code || !state) {
+    return c.redirect("/dashboard/integrations?error=missing_params");
+  }
+
+  const redirectUrl = new URL("/dashboard/integrations", `${c.req.header("origin") ?? "http://localhost:3000"}`);
+  redirectUrl.searchParams.set("facebook_code", code);
+  redirectUrl.searchParams.set("facebook_state", state);
+
+  return c.redirect(redirectUrl.toString());
+});
+
+// ─── 6. tRPC handler ───
 app.use("/api/trpc/*", async (c) => {
   return fetchRequestHandler({
     endpoint: "/api/trpc",

@@ -6,7 +6,7 @@ import { users } from "@db/schema";
 import { eq } from "drizzle-orm";
 import { Paths } from "@contracts/constants";
 import type { Context } from "hono";
-import type { User } from "@db/schema";
+import type { User } from "../context";
 
 /**
  * Extract and verify session from request headers.

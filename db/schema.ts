@@ -1,98 +1,74 @@
-import {
-  mysqlTable,
-  mysqlEnum,
-  serial,
-  varchar,
-  text,
-  timestamp,
-  bigint,
-  json,
-  int,
-} from "drizzle-orm/mysql-core";
+import { sqliteTable, integer, text } from "drizzle-orm/sqlite-core";
 
-// ─── Users (auth) ───
-export const users = mysqlTable("users", {
-  id: serial("id").primaryKey(),
-  unionId: varchar("unionId", { length: 255 }).notNull().unique(),
-  name: varchar("name", { length: 255 }),
-  email: varchar("email", { length: 320 }),
+// ─── Users ───
+export const users = sqliteTable("users", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  unionId: text("union_id").notNull().unique(),
+  name: text("name"),
+  email: text("email"),
   avatar: text("avatar"),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull().$onUpdate(() => new Date()),
-  lastSignInAt: timestamp("lastSignInAt").defaultNow().notNull(),
+  role: text("role", { enum: ["user", "admin"] }).notNull().default("user"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  lastSignInAt: integer("last_sign_in_at", { mode: "timestamp" }),
 });
-
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
 
 // ─── Agents ───
-export const agents = mysqlTable("agents", {
-  id: serial("id").primaryKey(),
-  slug: varchar("slug", { length: 50 }).notNull().unique(),
-  name: varchar("name", { length: 100 }).notNull(),
-  role: varchar("role", { length: 200 }).notNull(),
+export const agents = sqliteTable("agents", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  role: text("role").notNull(),
   description: text("description"),
-  avatar: varchar("avatar", { length: 500 }),
-  systemPrompt: text("systemPrompt").notNull(),
-  capabilities: json("capabilities").$type<string[]>(),
-  tools: json("tools").$type<string[]>(),
-  personality: varchar("personality", { length: 20 }).default("balanced"),
-  aiModel: varchar("aiModel", { length: 50 }).default("kimi-latest"),
-  isDefault: mysqlEnum("isDefault", ["true", "false"]).default("false").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull().$onUpdate(() => new Date()),
+  avatar: text("avatar"),
+  systemPrompt: text("system_prompt"),
+  capabilities: text("capabilities", { mode: "json" }).$type<string[]>().default([]),
+  tools: text("tools", { mode: "json" }).$type<string[]>().default([]),
+  personality: text("personality"),
+  aiModel: text("ai_model").default("kimi-latest"),
+  isDefault: text("is_default", { enum: ["true", "false"] }).default("false"),
+  status: text("status", { enum: ["active", "archived"] }).default("active"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
-
-export type Agent = typeof agents.$inferSelect;
-export type InsertAgent = typeof agents.$inferInsert;
 
 // ─── Chat Messages ───
-export const chatMessages = mysqlTable("chat_messages", {
-  id: serial("id").primaryKey(),
-  agentId: bigint("agentId", { mode: "number", unsigned: true }).notNull(),
-  userId: bigint("userId", { mode: "number", unsigned: true }),
+export const chatMessages = sqliteTable("chat_messages", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  agentId: integer("agent_id", { mode: "number" }).notNull(),
+  userId: integer("user_id", { mode: "number" }),
   content: text("content").notNull(),
-  sender: mysqlEnum("sender", ["user", "agent"]).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  sender: text("sender", { enum: ["user", "agent", "system"] }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
-
-export type ChatMessage = typeof chatMessages.$inferSelect;
-export type InsertChatMessage = typeof chatMessages.$inferInsert;
 
 // ─── Knowledge Docs ───
-export const knowledgeDocs = mysqlTable("knowledge_docs", {
-  id: serial("id").primaryKey(),
-  agentId: bigint("agentId", { mode: "number", unsigned: true }).notNull(),
-  filename: varchar("filename", { length: 255 }).notNull(),
+export const knowledgeDocs = sqliteTable("knowledge_docs", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  agentId: integer("agent_id", { mode: "number" }).notNull(),
+  filename: text("filename").notNull(),
   content: text("content"),
-  size: int("size"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  size: integer("size"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
-
-export type KnowledgeDoc = typeof knowledgeDocs.$inferSelect;
 
 // ─── Agent Analytics ───
-export const agentAnalytics = mysqlTable("agent_analytics", {
-  id: serial("id").primaryKey(),
-  agentId: bigint("agentId", { mode: "number", unsigned: true }).notNull(),
-  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
-  messagesSent: int("messagesSent").default(0),
-  messagesReceived: int("messagesReceived").default(0),
-  tokensUsed: int("tokensUsed").default(0),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+export const agentAnalytics = sqliteTable("agent_analytics", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  agentId: integer("agent_id", { mode: "number" }).notNull(),
+  date: text("date").notNull(), // YYYY-MM-DD
+  messagesSent: integer("messages_sent").default(0),
+  messagesReceived: integer("messages_received").default(0),
+  tokensUsed: integer("tokens_used").default(0),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
-
-export type AgentAnalytics = typeof agentAnalytics.$inferSelect;
 
 // ─── Agent Calls ───
-export const agentCalls = mysqlTable("agent_calls", {
-  id: serial("id").primaryKey(),
-  agentId: bigint("agentId", { mode: "number", unsigned: true }).notNull(),
-  type: mysqlEnum("type", ["audio", "video"]).default("audio").notNull(),
-  duration: int("duration").default(0), // seconds
-  status: mysqlEnum("status", ["completed", "missed", "ongoing"]).default("completed").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+export const agentCalls = sqliteTable("agent_calls", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  agentId: integer("agent_id", { mode: "number" }).notNull(),
+  type: text("type", { enum: ["audio", "video"] }).default("audio"),
+  duration: integer("duration").default(0),
+  status: text("status", { enum: ["completed", "missed", "ongoing"] }).default("completed"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
-
-export type AgentCall = typeof agentCalls.$inferSelect;

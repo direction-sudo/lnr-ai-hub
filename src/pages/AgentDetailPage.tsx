@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import { useAgent } from '@/hooks/useAgent';
-import type { Message } from '@/types';
+import type { ChatMessage as Message } from '@/hooks/useRealChat';
 
 type Tab = 'conversation' | 'calls' | 'knowledge' | 'analytics' | 'settings';
 
@@ -26,10 +26,9 @@ export default function AgentDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('conversation');
   const id = Number(agentId) || 0;
 
-  const { agents } = useChat();
+  const { agents, getHistory } = useChat();
   const { getById } = useAgent();
   const { data: agentDetail } = getById(id);
-
   const agent = agents.find(a => a.id === id) || agentDetail;
 
   if (!agent) {
@@ -104,8 +103,8 @@ export default function AgentDetailPage() {
 /* ═════════════════ CONVERSATION TAB ═════════════════ */
 function ConversationTab({ agent }: { agent: { id: number; name: string; avatar: string | null; role: string; slug: string } }) {
   const [input, setInput] = useState('');
-  const { sendMessage, isSending, getHistoryQuery } = useChat();
-  const { data: messages = [] } = getHistoryQuery(agent.id);
+  const { sendMessage, isSending, getHistory } = useChat();
+  const messages: Message[] = getHistory(agent.id);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -164,17 +163,17 @@ function ConversationTab({ agent }: { agent: { id: number; name: string; avatar:
           </div>
         ) : (
           messages.map((msg: Message) => (
-            <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} gap-2`}>
-              {msg.sender === 'agent' && (
+            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} gap-2`}>
+              {msg.role === 'agent' && (
                 <img src={agent.avatar || ''} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5" />
               )}
               <div className={`max-w-[70%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                msg.sender === 'user'
+                msg.role === 'user'
                   ? 'gold-gradient text-[#0A0A0B] font-semibold rounded-tr-sm'
                   : 'bg-[#18181B] border border-white/[0.04] text-[#FAFAFA] rounded-tl-sm'
               }`}>
                 {msg.content}
-                <div className={`text-[10px] mt-1 ${msg.sender === 'user' ? 'text-[#0A0A0B]/50' : 'text-[#3F3F46]'}`}>{formatTime(msg.createdAt)}</div>
+                <div className={`text-[10px] mt-1 ${msg.role === 'user' ? 'text-[#0A0A0B]/50' : 'text-[#3F3F46]'}`}>{formatTime(msg.createdAt)}</div>
               </div>
             </div>
           ))
@@ -338,7 +337,7 @@ function KnowledgeTab({ agent }: { agent: { id: number; name: string } }) {
     reader.readAsText(file);
   };
 
-  const formatSize = (bytes?: number) => {
+  const formatSize = (bytes?: number | null) => {
     if (!bytes) return '0 B';
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;

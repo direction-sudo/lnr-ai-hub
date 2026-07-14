@@ -142,7 +142,7 @@ export const agentRouter = createRouter({
         type: input.type,
         duration: input.duration,
         status: input.status,
-      });
-      return { id: Number(result[0].insertId) };
+      }).returning({ id: agentCalls.id });
+      return { id: result[0].id };
     }),
 });

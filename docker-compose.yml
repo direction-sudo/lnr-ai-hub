@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=sqlite:/app/data/lnr-ai-hub.db
+      - APP_ID=${APP_ID}
+      - APP_SECRET=${APP_SECRET}
+      - KIMI_AUTH_URL=${KIMI_AUTH_URL}
+      - KIMI_OPEN_URL=${KIMI_OPEN_URL}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

@@ -1,58 +1,82 @@
-import { trpc } from '@/providers/trpc';
+import { useCallback } from 'react';
+import { useRealChat } from './useRealChat';
+
+export interface Call {
+  id: number;
+  agentId: number;
+  type: 'audio' | 'video';
+  status: 'completed' | 'missed' | 'ongoing';
+  duration: number;
+  createdAt: Date;
+}
+
+export interface KnowledgeDoc {
+  id: number;
+  agentId: number;
+  filename: string;
+  content: string | null;
+  size: number | null;
+  createdAt: Date;
+}
+
+export interface AnalyticsData {
+  totals: {
+    messages: number;
+    calls: number;
+    callDuration: number;
+    knowledgeDocs: number;
+  };
+  daily: Array<{
+    date: string;
+    messagesSent: number | null;
+    messagesReceived: number | null;
+  }>;
+}
 
 export function useAgent() {
-  const utils = trpc.useUtils();
+  const { agents, updateAgent, getAnalytics } = useRealChat();
 
-  // ─── Get agent by ID ───
-  const getById = (id: number) =>
-    trpc.agent.getById.useQuery({ id }, { enabled: id > 0 });
+  const getById = (id: number) => {
+    const agent = agents.find(a => a.id === id);
+    return { data: agent ?? null, isLoading: false };
+  };
 
-  // ─── Update agent ───
-  const updateMutation = trpc.agent.update.useMutation({
-    onSuccess: () => {
-      utils.agent.getById.invalidate();
-      utils.chat.listAgents.invalidate();
-    },
-  });
+  const update = useCallback((data: { id: number; [key: string]: unknown }) => {
+    const { id, ...rest } = data;
+    updateAgent(id, rest as Parameters<typeof updateAgent>[1]);
+  }, [updateAgent]);
 
-  // ─── Knowledge ───
-  const listKnowledge = (agentId: number) =>
-    trpc.agent.listKnowledge.useQuery({ agentId }, { enabled: agentId > 0 });
+  const listKnowledge = (_agentId: number) => {
+    return { data: [] as KnowledgeDoc[], isLoading: false };
+  };
 
-  const addKnowledgeMutation = trpc.agent.addKnowledge.useMutation({
-    onSuccess: () => utils.agent.listKnowledge.invalidate(),
-  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const addKnowledge = useCallback((_data: any) => {}, []);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const deleteKnowledge = useCallback((_data: any) => {}, []);
 
-  const deleteKnowledgeMutation = trpc.agent.deleteKnowledge.useMutation({
-    onSuccess: () => utils.agent.listKnowledge.invalidate(),
-  });
+  const getAnalyticsQuery = (_agentId: number) => {
+    return { data: getAnalytics(_agentId) as AnalyticsData, isLoading: false };
+  };
 
-  // ─── Analytics ───
-  const getAnalytics = (agentId: number) =>
-    trpc.agent.getAnalytics.useQuery({ agentId }, { enabled: agentId > 0 });
+  const listCalls = (_agentId: number) => {
+    return { data: [] as Call[], isLoading: false };
+  };
 
-  // ─── Calls ───
-  const listCalls = (agentId: number) =>
-    trpc.agent.listCalls.useQuery({ agentId }, { enabled: agentId > 0 });
-
-  const createCallMutation = trpc.agent.createCall.useMutation({
-    onSuccess: () => utils.agent.listCalls.invalidate(),
-  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const createCall = useCallback((_data: any) => {}, []);
 
   return {
     getById,
-    update: updateMutation.mutate,
-    isUpdating: updateMutation.isPending,
-
+    update,
+    isUpdating: false,
     listKnowledge,
-    addKnowledge: addKnowledgeMutation.mutate,
-    deleteKnowledge: deleteKnowledgeMutation.mutate,
-    isAddingKnowledge: addKnowledgeMutation.isPending,
-
-    getAnalytics,
-
+    addKnowledge,
+    deleteKnowledge,
+    isAddingKnowledge: false,
+    getAnalytics: getAnalyticsQuery,
     listCalls,
-    createCall: createCallMutation.mutate,
-    isCreatingCall: createCallMutation.isPending,
+    createCall,
+    isCreatingCall: false,
   };
 }
