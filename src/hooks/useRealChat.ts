@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { sendMessageToAI, hasApiKey } from '@/lib/ai-service';
 import { MOCK_AGENTS } from '@/providers/mockData';
+import { trpc } from '@/providers/trpc';
 
 export interface ChatMessage {
   id: number;
@@ -84,6 +85,10 @@ export function useRealChat() {
   const [isSending, setIsSending] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [apiKeyConfigured] = useState(hasApiKey);
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  // tRPC mutation for IFTTT publishing
+  const publishMutation = trpc.ifttt.publish.useMutation();
 
   // Persist whenever state changes
   useEffect(() => { saveAgents(agents); }, [agents]);
@@ -139,6 +144,23 @@ export function useRealChat() {
 
     setIsSending(false);
   }, [agents, messages]);
+
+  // ─── Publish content to social media ───
+  const publishContent = useCallback(async (content: string, platforms: string[]) => {
+    setIsPublishing(true);
+    try {
+      const result = await publishMutation.mutateAsync({
+        content,
+        platforms: platforms as ("facebook" | "linkedin" | "instagram" | "twitter")[],
+      });
+      return result;
+    } catch (err) {
+      console.error("[Publish] Error:", err);
+      throw err;
+    } finally {
+      setIsPublishing(false);
+    }
+  }, [publishMutation]);
 
   // ─── Create agent ───
   const createAgent = useCallback((data: {
@@ -214,5 +236,7 @@ export function useRealChat() {
     updateAgent,
     getAnalytics,
     apiKeyConfigured,
+    publishContent,
+    isPublishing,
   };
 }

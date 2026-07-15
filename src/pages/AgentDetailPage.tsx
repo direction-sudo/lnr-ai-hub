@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router';
 import {
   MessageSquare, Phone, Video, BookOpen, BarChart3, Settings,
   Send, Paperclip, ChevronLeft, Upload, Trash2, Clock,
-  FileText, TrendingUp, MessageCircle, PhoneOff
+  FileText, TrendingUp, MessageCircle, PhoneOff,
+  Loader2, Check
 } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import { useAgent } from '@/hooks/useAgent';
@@ -103,7 +104,9 @@ export default function AgentDetailPage() {
 /* ═════════════════ CONVERSATION TAB ═════════════════ */
 function ConversationTab({ agent }: { agent: { id: number; name: string; avatar: string | null; role: string; slug: string } }) {
   const [input, setInput] = useState('');
-  const { sendMessage, isSending, getHistory } = useChat();
+  const [publishPlatforms, setPublishPlatforms] = useState<string[]>(['facebook']);
+  const [publishedMsg, setPublishedMsg] = useState<string | null>(null);
+  const { sendMessage, isSending, getHistory, publishContent, isPublishing } = useChat();
   const messages: Message[] = getHistory(agent.id);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -116,10 +119,20 @@ function ConversationTab({ agent }: { agent: { id: number; name: string; avatar:
     if (!content.trim()) return;
     sendMessage(agent.id, content.trim());
     setInput('');
+    setPublishedMsg(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  };
+
+  const handlePublish = async (msgContent: string) => {
+    try {
+      await publishContent(msgContent, publishPlatforms);
+      setPublishedMsg(msgContent);
+    } catch (err) {
+      console.error("[Publish] Failed:", err);
+    }
   };
 
   const quickPrompts = agent.slug === 'nora'
@@ -129,6 +142,11 @@ function ConversationTab({ agent }: { agent: { id: number; name: string; avatar:
     : [];
 
   const formatTime = (d: Date) => new Date(d).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+  // Check if a message contains publishable content (has hashtags or looks like a post)
+  const isPublishable = (content: string) => {
+    return content.includes('#') || content.includes('📝') || content.includes('🚀') || content.length > 200;
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -162,19 +180,68 @@ function ConversationTab({ agent }: { agent: { id: number; name: string; avatar:
             )}
           </div>
         ) : (
-          messages.map((msg: Message) => (
-            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} gap-2`}>
-              {msg.role === 'agent' && (
-                <img src={agent.avatar || ''} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5" />
-              )}
-              <div className={`max-w-[70%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                msg.role === 'user'
-                  ? 'gold-gradient text-[#0A0A0B] font-semibold rounded-tr-sm'
-                  : 'bg-[#18181B] border border-white/[0.04] text-[#FAFAFA] rounded-tl-sm'
-              }`}>
-                {msg.content}
-                <div className={`text-[10px] mt-1 ${msg.role === 'user' ? 'text-[#0A0A0B]/50' : 'text-[#3F3F46]'}`}>{formatTime(msg.createdAt)}</div>
+          messages.map((msg: Message, idx: number) => (
+            <div key={msg.id}>
+              <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} gap-2`}>
+                {msg.role === 'agent' && (
+                  <img src={agent.avatar || ''} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0 mt-0.5" />
+                )}
+                <div className={`max-w-[70%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                  msg.role === 'user'
+                    ? 'gold-gradient text-[#0A0A0B] font-semibold rounded-tr-sm'
+                    : 'bg-[#18181B] border border-white/[0.04] text-[#FAFAFA] rounded-tl-sm'
+                }`}>
+                  {msg.content}
+                  <div className={`text-[10px] mt-1 ${msg.role === 'user' ? 'text-[#0A0A0B]/50' : 'text-[#3F3F46]'}`}>{formatTime(msg.createdAt)}</div>
+                </div>
               </div>
+              {/* Publish button for agent messages with publishable content */}
+              {msg.role === 'agent' && idx === messages.length - 1 && !isSending && isPublishable(msg.content) && (
+                <div className="flex justify-start gap-2 mt-2 ml-9">
+                  <div className="bg-[#18181B] border border-white/[0.04] rounded-xl px-3 py-2">
+                    <p className="text-[10px] text-[#3F3F46] mb-1.5">Publier sur :</p>
+                    <div className="flex gap-1.5 mb-2">
+                      {['facebook', 'linkedin', 'instagram'].map(p => (
+                        <button
+                          key={p}
+                          onClick={() => setPublishPlatforms(prev =>
+                            prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]
+                          )}
+                          className={`px-2 py-1 text-[10px] font-medium rounded-full capitalize transition-all ${
+                            publishPlatforms.includes(p)
+                              ? 'bg-[#D4A853]/20 text-[#D4A853] border border-[#D4A853]/40'
+                              : 'bg-white/[0.03] text-[#3F3F46] border border-white/[0.04]'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => handlePublish(msg.content)}
+                      disabled={isPublishing || publishPlatforms.length === 0}
+                      className="w-full px-3 py-1.5 text-xs font-medium rounded-lg bg-[#D4A853] text-[#0A0A0B] hover:bg-[#C49A4F] disabled:opacity-30 transition-all flex items-center justify-center gap-1.5"
+                    >
+                      {isPublishing ? (
+                        <>
+                          <Loader2 size={12} className="animate-spin" />
+                          Publication...
+                        </>
+                      ) : publishedMsg === msg.content ? (
+                        <>
+                          <Check size={12} />
+                          Publié !
+                        </>
+                      ) : (
+                        <>
+                          <Send size={12} />
+                          Publier
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))
         )}
