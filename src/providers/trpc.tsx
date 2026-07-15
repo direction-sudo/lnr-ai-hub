@@ -441,6 +441,27 @@ Je suis là pour vous aider ! 💼`;
                   mockKnowledge = mockKnowledge.filter((k) => k.id !== Number(json.id));
                   data = { success: true };
                 }
+                // ─── IFTTT ───
+                else if (path === "ifttt.publish") {
+                  data = { success: true, platforms: { facebook: true }, timestamp: new Date().toISOString() };
+                } else if (path === "ifttt.generateAndPublish") {
+                  data = { success: true, content: "Mock published content", platforms: { facebook: true }, timestamp: new Date().toISOString() };
+                } else if (path === "ifttt.status") {
+                  data = { connected: true, message: "IFTTT mock connected" };
+                }
+                // ─── Admin ───
+                else if (path === "admin.stats") {
+                  data = { tables: { agents: mockAgents.length, chatMessages: Object.values(mockMessages).flat().length }, totalTables: 2, dbPath: "mock" };
+                } else if (path === "admin.listTables") {
+                  data = ["agents", "chatMessages"];
+                } else if (path === "admin.queryTable") {
+                  const table = (json as Record<string, unknown>).table as string;
+                  if (table === "agents") data = { rows: mockAgents, count: mockAgents.length };
+                  else if (table === "chatMessages") {
+                    const allMsgs = Object.values(mockMessages).flat();
+                    data = { rows: allMsgs.slice(0, 50), count: allMsgs.length };
+                  } else data = { rows: [], count: 0 };
+                }
 
                 return { result: { data: { json: data } } };
               });
