@@ -1,24 +1,32 @@
 services:
   - type: web
-    name: lnr-ai-hub
+    name: lnr-ai-hub-backend
     runtime: docker
     plan: free
+    dockerfilePath: ./Dockerfile
+    port: 3000
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 3000
+        value: "3000"
       - key: DATABASE_URL
         value: sqlite:/app/data/lnr-ai-hub.db
-      - key: APP_ID
-        sync: false
-      - key: APP_SECRET
-        sync: false
-      - key: KIMI_AUTH_URL
-        value: https://platform.kimi.ai
       - key: KIMI_OPEN_URL
         value: https://api.moonshot.ai
+      # À configurer dans le dashboard Render (Secrets) :
+      # - key: KIMI_API_KEY
+      #   value: sk-votre-clé
+      # - key: APP_ID
+      #   value: votre-app-id
+      # - key: APP_SECRET
+      #   value: votre-app-secret
+      # - key: OWNER_UNION_ID
+      #   value: votre-owner-id
+      # - key: IFTTT_WEBHOOK_KEY
+      #   value: votre-key-ifttt
     disk:
-      name: data
+      name: lnr-data
       mountPath: /app/data
       sizeGB: 1

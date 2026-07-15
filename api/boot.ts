@@ -50,7 +50,7 @@ app.use(
 app.use(
   "/api/*",
   cors({
-    origin: env.isProduction ? undefined : "http://localhost:3000",
+    origin: (origin) => origin || "*",
     credentials: true,
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization", "x-trpc-source"],
@@ -106,6 +106,9 @@ app.get("/api/oauth/callback/facebook", async (c) => {
   return c.redirect(redirectUrl.toString());
 });
 
+// ─── Health check endpoint ───
+app.get("/api/health", (c) => c.json({ ok: true, ts: Date.now() }));
+
 // ─── 6. tRPC handler ───
 app.use("/api/trpc/*", async (c) => {
   return fetchRequestHandler({
@@ -121,13 +124,12 @@ app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
 export default app;
 
-if (env.isProduction) {
-  const { serve } = await import("@hono/node-server");
-  const { serveStaticFiles } = await import("./lib/vite");
-  serveStaticFiles(app);
+// ─── Start server (Render sets PORT, so we use that as the signal) ───
+const port = parseInt(process.env.PORT || "3000");
+const { serve } = await import("@hono/node-server");
+const { serveStaticFiles } = await import("./lib/vite");
+serveStaticFiles(app);
 
-  const port = parseInt(process.env.PORT || "3000");
-  serve({ fetch: app.fetch, port }, () => {
-    console.log(`Server running on http://localhost:${port}/`);
-  });
-}
+serve({ fetch: app.fetch, port, hostname: "0.0.0.0" }, () => {
+  console.log(`[LNR AI Hub] Server running on http://0.0.0.0:${port}/`);
+});

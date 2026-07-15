@@ -17,7 +17,7 @@ export async function chatCompletion(
       Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({
-      model: "kimi-latest",
+      model: "moonshot-v1-8k",
       messages,
       temperature: options?.temperature ?? 0.7,
       max_tokens: options?.maxTokens ?? 2000,

@@ -7,7 +7,8 @@ import path from "path";
 type App = Hono<{ Bindings: HttpBindings }>;
 
 export function serveStaticFiles(app: App) {
-  const distPath = path.resolve(import.meta.dirname, "../dist/public");
+  // __dirname is defined by the esbuild banner in dist/boot.js
+  const distPath = path.resolve(__dirname, "../dist/public");
 
   app.use("*", serveStatic({ root: "./dist/public" }));
 
@@ -16,8 +17,12 @@ export function serveStaticFiles(app: App) {
     if (!accept.includes("text/html")) {
       return c.json({ error: "Not Found" }, 404);
     }
-    const indexPath = path.resolve(distPath, "index.html");
-    const content = fs.readFileSync(indexPath, "utf-8");
-    return c.html(content);
+    try {
+      const indexPath = path.resolve(distPath, "index.html");
+      const content = fs.readFileSync(indexPath, "utf-8");
+      return c.html(content);
+    } catch {
+      return c.json({ error: "Not Found" }, 404);
+    }
   });
 }

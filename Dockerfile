@@ -1,43 +1,60 @@
-# ─── LNR AI Hub - Backend Dockerfile ───
+# ═══════════════════════════════════════════════════════════════
+# LNR AI Hub — Production Dockerfile (Render)
+# ═══════════════════════════════════════════════════════════════
 
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-RUN npm install
+# Installer les outils de build pour les modules natifs
+RUN apk add --no-cache python3 make g++
 
-# Copy source
+# Copier package.json ET package-lock.json
+COPY package.json package-lock.json ./
+
+# Installer les dépendances
+RUN npm ci --legacy-peer-deps --maxsockets 1
+
+# Copier le code source
 COPY . .
 
-# Build frontend and backend
+# Définir NODE_ENV pour que esbuild inclue le bloc serve()
+ENV NODE_ENV=production
+
+# Build frontend + backend
 RUN npm run build
 
-# ─── Production Stage ───
+# ═══════════════════════════════════════════════════════════════
+# Stage de production
+# ═══════════════════════════════════════════════════════════════
+
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Install better-sqlite3 dependencies
+# Outils pour better-sqlite3
 RUN apk add --no-cache python3 make g++
 
-# Copy built files
+# Copier les fichiers buildés
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/package.json ./
 COPY --from=builder /app/db ./db
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/drizzle.config.ts ./
+COPY --from=builder /app/tsconfig.json ./
+COPY --from=builder /app/start.sh ./
+RUN chmod +x start.sh
 
-# Create data directory for SQLite
+# Créer le dossier data pour SQLite (monté sur disque persistant Render)
 RUN mkdir -p /app/data
 
-# Environment
-ENV NODE_ENV=production
-ENV PORT=3000
-ENV DATABASE_URL=sqlite:/app/data/lnr-ai-hub.db
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-# Expose port
+# Port
 EXPOSE 3000
 
-# Start
-CMD ["node", "dist/boot.js"]
+# Démarrer via le script start.sh
+CMD ["./start.sh"]

@@ -4,13 +4,15 @@ import {
   Home, Bot, MessageSquare, Plus, Search,
   Sparkles, Star, Wand2,
   Users, Instagram, PenTool, Target, BarChart3,
-  Menu, ChevronRight, Link2, Key, Megaphone
+  Menu, ChevronRight, Link2, Key, Megaphone,
+  Database
 } from 'lucide-react';
 import ApiKeyModal from '@/components/ApiKeyModal';
 import { useChat } from '@/hooks/useChat';
 import AgentDetailPage from './AgentDetailPage';
 import IntegrationsPage from './IntegrationsPage';
 import CampaignsPage from './CampaignsPage';
+import AdminDBPage from './AdminDBPage';
 
 const ALL_AVATARS = [
   './images/avatar-nora.png',
@@ -34,6 +36,7 @@ function Sidebar({ mobileOpen, onClose, onOpenApiKey }: { mobileOpen: boolean; o
     { path: '/dashboard/campaigns', label: 'Campagnes', icon: Megaphone },
     { path: '/dashboard/integrations', label: 'Intégrations', icon: Link2 },
     { path: '/dashboard/create', label: 'Créer un agent', icon: Plus },
+    { path: '/dashboard/admin/db', label: 'Base de données', icon: Database },
   ];
 
   const defaultAgents = agents.filter(a => a.isDefault === 'true');
@@ -501,6 +504,7 @@ export default function DashboardPage() {
             <Route path="/campaigns" element={<CampaignsPage />} />
             <Route path="/integrations" element={<IntegrationsPage />} />
             <Route path="/create" element={<CreateAgentView />} />
+            <Route path="/admin/db" element={<AdminDBPage />} />
           </Routes>
         </main>
       </div>

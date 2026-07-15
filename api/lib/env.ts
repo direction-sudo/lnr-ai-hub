@@ -8,12 +8,18 @@ function required(name: string): string {
   return value ?? "";
 }
 
+function optional(name: string, defaultValue = ""): string {
+  return process.env[name] ?? defaultValue;
+}
+
 export const env = {
-  appId: required("APP_ID"),
-  appSecret: required("APP_SECRET"),
+  appId: optional("APP_ID"),
+  appSecret: optional("APP_SECRET"),
   isProduction: process.env.NODE_ENV === "production",
   databaseUrl: required("DATABASE_URL"),
-  kimiAuthUrl: required("KIMI_AUTH_URL"),
+  kimiAuthUrl: optional("KIMI_AUTH_URL"),
   kimiOpenUrl: required("KIMI_OPEN_URL"),
-  ownerUnionId: process.env.OWNER_UNION_ID ?? "",
+  ownerUnionId: optional("OWNER_UNION_ID"),
+  kimiApiKey: optional("KIMI_API_KEY"),
+  iftttWebhookKey: optional("IFTTT_WEBHOOK_KEY", "cwiD1tRy3wGlwvaY8opdv-"),
 };

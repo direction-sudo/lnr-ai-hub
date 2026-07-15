@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { createRouter, publicQuery, authedQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery, authedOrApiKeyQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { agents, chatMessages, agentAnalytics } from "@db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { chatCompletion, AGENT_SYSTEM_PROMPTS } from "./ai-service";
 import type { ChatCompletionMessage } from "./ai-service";
+import { env } from "./lib/env";
 import { checkRateLimit } from "./rate-limit";
 
 export const chatRouter = createRouter({
@@ -27,8 +28,8 @@ export const chatRouter = createRouter({
       return rows[0] ?? null;
     }),
 
-  // ─── Get chat history (auth required) ───
-  getHistory: authedQuery
+  // ─── Get chat history (auth or API key) ───
+  getHistory: authedOrApiKeyQuery
     .input(z.object({ agentId: z.number().int().positive() }))
     .query(async ({ input }) => {
       const db = getDb();
@@ -40,8 +41,8 @@ export const chatRouter = createRouter({
       return rows;
     }),
 
-  // ─── Send message & get AI response (auth required + rate limited) ───
-  sendMessage: authedQuery
+  // ─── Send message & get AI response (auth or API key + rate limited) ───
+  sendMessage: authedOrApiKeyQuery
     .input(
       z.object({
         agentId: z.number().int().positive(),
@@ -111,17 +112,18 @@ export const chatRouter = createRouter({
       const apiMessages: ChatCompletionMessage[] = [
         { role: "system", content: systemPrompt },
         ...chronological.map((m) => ({
-          role: m.sender as "user" | "assistant",
+          role: (m.sender === "agent" ? "assistant" : m.sender) as "user" | "assistant",
           content: m.content,
         })),
       ];
 
-      // 5. Call Kimi AI with user's access token
+      // 5. Call Kimi AI with user's access token, or fallback to API key
       let aiResponse: string;
+      const accessToken = ctx.accessToken || env.kimiApiKey || null;
 
-      if (ctx.accessToken) {
+      if (accessToken) {
         try {
-          aiResponse = await chatCompletion(ctx.accessToken, apiMessages, {
+          aiResponse = await chatCompletion(accessToken, apiMessages, {
             temperature: 0.75,
             maxTokens: 2000,
           });
