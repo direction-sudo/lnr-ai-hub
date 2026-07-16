@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { trpc } from '@/providers/trpc';
 
 // ─── Types ───
 export interface SocialConnection {
@@ -160,6 +161,9 @@ export function useSocial() {
   const [connections, setConnections] = useState<SocialConnection[]>(loadConnections);
   const [isPublishing, setIsPublishing] = useState(false);
 
+  // tRPC mutation for Facebook publish (via backend)
+  const fbMutation = trpc.social.publishFacebookPostV2.useMutation();
+
   useEffect(() => {
     saveConnections(connections);
   }, [connections]);
@@ -198,7 +202,13 @@ export function useSocial() {
       if (platform === 'linkedin') {
         result = await publishLinkedIn(conn.accessToken, content);
       } else if (platform === 'facebook' && conn.pageId) {
-        result = await publishFacebook(conn.accessToken, conn.pageId, content);
+        // Use backend proxy (avoids CORS)
+        const fbResult = await fbMutation.mutateAsync({
+          text: content,
+          pageId: conn.pageId,
+          accessToken: conn.accessToken,
+        });
+        result = { success: fbResult.success };
       } else if (platform === 'instagram' && conn.pageId && extra?.imageUrl) {
         result = await publishInstagram(conn.accessToken, conn.pageId, content, extra.imageUrl);
       }

@@ -326,6 +326,40 @@ export const socialRouter = createRouter({
     }),
 
   // ═══════════════════════════════════════════
+  // V2 — Public endpoints (API key auth, token passed directly)
+  // ═══════════════════════════════════════════
+
+  // Publish to Facebook Page (V2 — receives token directly)
+  publishFacebookPostV2: publicQuery
+    .input(
+      z.object({
+        text: z.string().min(1).max(5000),
+        pageId: z.string(),
+        accessToken: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const postRes = await fetch(`${FACEBOOK_API_URL}/${input.pageId}/feed`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: input.text,
+          access_token: input.accessToken,
+        }),
+      });
+
+      if (!postRes.ok) {
+        const errorText = await postRes.text();
+        console.error("[Facebook V2] Publish error:", errorText);
+        throw new Error(`Publication Facebook échouée: ${errorText}`);
+      }
+
+      const result = (await postRes.json()) as { id: string };
+      console.log("[Facebook V2] Published:", result.id);
+      return { success: true, postId: result.id };
+    }),
+
+  // ═══════════════════════════════════════════
   // GENERAL
   // ═══════════════════════════════════════════
 

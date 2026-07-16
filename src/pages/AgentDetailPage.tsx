@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useChat } from '@/hooks/useChat';
 import { useAgent } from '@/hooks/useAgent';
+import { useSocial } from '@/hooks/useSocial';
 import type { ChatMessage as Message } from '@/hooks/useRealChat';
 
 type Tab = 'conversation' | 'calls' | 'knowledge' | 'analytics' | 'settings';
@@ -126,9 +127,18 @@ function ConversationTab({ agent }: { agent: { id: number; name: string; avatar:
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
+  const { publishPost: socialPublish, isPublishing: socialPublishing } = useSocial();
+
   const handlePublish = async (msgContent: string) => {
     try {
-      await publishContent(msgContent, publishPlatforms);
+      // Use direct API for Facebook (backend proxy), IFTTT for others
+      for (const platform of publishPlatforms) {
+        if (platform === 'facebook') {
+          await socialPublish('facebook', msgContent);
+        } else {
+          await publishContent(msgContent, [platform]);
+        }
+      }
       setPublishedMsg(msgContent);
     } catch (err) {
       console.error("[Publish] Failed:", err);
@@ -219,7 +229,7 @@ function ConversationTab({ agent }: { agent: { id: number; name: string; avatar:
                     </div>
                     <button
                       onClick={() => handlePublish(msg.content)}
-                      disabled={isPublishing || publishPlatforms.length === 0}
+                      disabled={isPublishing || socialPublishing || publishPlatforms.length === 0}
                       className="w-full px-3 py-1.5 text-xs font-medium rounded-lg bg-[#D4A853] text-[#0A0A0B] hover:bg-[#C49A4F] disabled:opacity-30 transition-all flex items-center justify-center gap-1.5"
                     >
                       {isPublishing ? (
