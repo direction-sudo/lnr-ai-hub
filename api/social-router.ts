@@ -329,7 +329,7 @@ export const socialRouter = createRouter({
   // V2 — Public endpoints (API key auth, token passed directly)
   // ═══════════════════════════════════════════
 
-  // Publish to Facebook Page (V2 — receives token directly)
+  // Publish to Facebook Page (V2 — converts user token to page token)
   publishFacebookPostV2: publicQuery
     .input(
       z.object({
@@ -339,24 +339,50 @@ export const socialRouter = createRouter({
       })
     )
     .mutation(async ({ input }) => {
+      // Step 1: Get page access token from user token
+      const accountsRes = await fetch(
+        `${FACEBOOK_API_URL}/me/accounts?access_token=${input.accessToken}`
+      );
+
+      if (!accountsRes.ok) {
+        const err = await accountsRes.text();
+        console.error("[Facebook V2] /me/accounts error:", err);
+        throw new Error("Impossible d'obtenir les pages. Vérifiez votre token.");
+      }
+
+      const accountsData = (await accountsRes.json()) as {
+        data: { id: string; name: string; access_token: string }[];
+      };
+
+      const page = accountsData.data.find((p) => p.id === input.pageId);
+      if (!page) {
+        throw new Error(
+          `Page ${input.pageId} non trouvée. Pages disponibles: ${accountsData.data.map((p) => p.name).join(", ")}`
+        );
+      }
+
+      const pageToken = page.access_token;
+      console.log(`[Facebook V2] Using page token for "${page.name}"`);
+
+      // Step 2: Publish with page token
       const postRes = await fetch(`${FACEBOOK_API_URL}/${input.pageId}/feed`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: input.text,
-          access_token: input.accessToken,
+          access_token: pageToken,
         }),
       });
 
       if (!postRes.ok) {
         const errorText = await postRes.text();
         console.error("[Facebook V2] Publish error:", errorText);
-        throw new Error(`Publication Facebook échouée: ${errorText}`);
+        throw new Error(`Publication échouée: ${errorText}`);
       }
 
       const result = (await postRes.json()) as { id: string };
       console.log("[Facebook V2] Published:", result.id);
-      return { success: true, postId: result.id };
+      return { success: true, postId: result.id, pageName: page.name };
     }),
 
   // ═══════════════════════════════════════════
