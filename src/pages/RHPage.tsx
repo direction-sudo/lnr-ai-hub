@@ -487,7 +487,9 @@ function CandidatesTab() {
               {parsedCv.education && (
                 <div className="glass-card p-4">
                   <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-2">Formation</p>
-                  <p className="text-xs text-[#FAFAFA]">{parsedCv.education}</p>
+                  <p className="text-xs text-[#FAFAFA]">
+                    {typeof parsedCv.education === 'string' ? parsedCv.education : JSON.stringify(parsedCv.education)}
+                  </p>
                 </div>
               )}
 

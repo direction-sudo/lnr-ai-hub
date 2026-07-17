@@ -241,7 +241,7 @@ RÈGLES : réponds UNIQUEMENT un JSON valide. Pas de markdown, pas de texte.`;
           hardSkills: toArray(parsed.hardSkills),
           softSkills: toArray(parsed.softSkills),
           languages: toArray(parsed.languages),
-          education: parsed.education || "",
+          education: typeof parsed.education === "string" ? parsed.education : parsed.education && typeof parsed.education === "object" ? Object.values(parsed.education).filter((v): v is string => typeof v === "string").join(" ") : "",
           certifications: toArray(parsed.certifications),
           experiences: normalizeExperiences(parsed.experiences),
           companies: toArray(parsed.companies),
