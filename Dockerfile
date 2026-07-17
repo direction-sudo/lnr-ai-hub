@@ -1,20 +1,22 @@
 # ═══════════════════════════════════════════════════════════════
 # LNR AI Hub — Production Dockerfile (Render)
 # ═══════════════════════════════════════════════════════════════
+# Utilise node:20-slim (Debian) car npm crash dans Alpine
 
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Installer les outils de build pour les modules natifs
-RUN apk add --no-cache python3 make g++
+# Installer les outils de build pour les modules natifs (better-sqlite3)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copier package.json ET package-lock.json
 COPY package.json package-lock.json ./
 
-# Installer les dépendances (npm ci est plus fiable que npm install en production)
-# --maxsockets=1 évite le bug "Exit handler never called" de npm dans Docker Alpine
-RUN npm ci --legacy-peer-deps --maxsockets=1 || (cat /root/.npm/_logs/*.log && exit 1)
+# Installer les dépendances avec npm ci (outil fiable pour la production)
+RUN npm ci --legacy-peer-deps
 
 # Copier le code source
 COPY . .
@@ -29,12 +31,14 @@ RUN npm run build
 # Stage de production
 # ═══════════════════════════════════════════════════════════════
 
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 
-# Outils pour better-sqlite3
-RUN apk add --no-cache python3 make g++
+# Outils pour better-sqlite3 + wget pour healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ wget \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copier les fichiers buildés
 COPY --from=builder /app/dist ./dist
