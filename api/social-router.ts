@@ -386,6 +386,124 @@ export const socialRouter = createRouter({
     }),
 
   // ═══════════════════════════════════════════
+  // V2 — LinkedIn (publicQuery, token direct)
+  // ═══════════════════════════════════════════
+
+  publishLinkedInPostV2: publicQuery
+    .input(z.object({
+      text: z.string().min(1).max(3000),
+      accessToken: z.string(),
+      visibility: z.enum(["PUBLIC", "CONNECTIONS"]).default("PUBLIC"),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        // Step 1: Get user info
+        const userRes = await fetch(`${LINKEDIN_API_URL}/userinfo`, {
+          headers: { Authorization: `Bearer ${input.accessToken}` },
+        });
+        if (!userRes.ok) throw new Error("Token LinkedIn invalide");
+        const user = await userRes.json() as { sub: string };
+        const authorUrn = `urn:li:person:${user.sub}`;
+
+        // Step 2: Create post
+        const postRes = await fetch(`${LINKEDIN_API_URL}/posts`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${input.accessToken}`,
+            "Content-Type": "application/json",
+            "X-Restli-Protocol-Version": "2.0.0",
+            "LinkedIn-Version": "202309",
+          },
+          body: JSON.stringify({
+            author: authorUrn,
+            commentary: input.text,
+            visibility: input.visibility,
+            distribution: {
+              feedDistribution: "MAIN_FEED",
+              targetEntities: [],
+              thirdPartyDistributionChannels: [],
+            },
+            lifecycleState: "PUBLISHED",
+            isReshareDisabledByAuthor: false,
+          }),
+        });
+
+        if (!postRes.ok) {
+          const err = await postRes.text();
+          throw new Error(`Publication LinkedIn échouée: ${err}`);
+        }
+
+        const postId = postRes.headers.get("x-restli-id") || "published";
+        return { success: true, postId };
+      } catch (err: any) {
+        console.error("[LinkedIn V2] Error:", err.message);
+        throw new Error(`LinkedIn: ${err.message}`);
+      }
+    }),
+
+  // ═══════════════════════════════════════════
+  // V2 — Instagram (publicQuery, token direct)
+  // ═══════════════════════════════════════════
+
+  publishInstagramPostV2: publicQuery
+    .input(z.object({
+      caption: z.string().min(1).max(2200),
+      imageUrl: z.string().url(),
+      accessToken: z.string(),
+      pageId: z.string(), // Facebook page ID linked to Instagram
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        // Step 1: Get Instagram Business Account ID from page
+        const igRes = await fetch(
+          `${FACEBOOK_API_URL}/${input.pageId}?fields=instagram_business_account&access_token=${input.accessToken}`
+        );
+        const igData = await igRes.json() as { instagram_business_account?: { id: string } };
+        const igAccountId = igData.instagram_business_account?.id;
+
+        if (!igAccountId) {
+          throw new Error("Aucun compte Instagram Business lié à cette page");
+        }
+
+        // Step 2: Create media container
+        const mediaRes = await fetch(`${FACEBOOK_API_URL}/${igAccountId}/media`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image_url: input.imageUrl,
+            caption: input.caption,
+            access_token: input.accessToken,
+          }),
+        });
+        const media = await mediaRes.json() as { id: string; error?: any };
+
+        if (media.error) {
+          throw new Error(`Instagram media creation: ${JSON.stringify(media.error)}`);
+        }
+
+        // Step 3: Publish
+        const publishRes = await fetch(`${FACEBOOK_API_URL}/${igAccountId}/media_publish`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            creation_id: media.id,
+            access_token: input.accessToken,
+          }),
+        });
+        const result = await publishRes.json() as { id: string; error?: any };
+
+        if (result.error) {
+          throw new Error(`Instagram publish: ${JSON.stringify(result.error)}`);
+        }
+
+        return { success: true, postId: result.id };
+      } catch (err: any) {
+        console.error("[Instagram V2] Error:", err.message);
+        throw new Error(`Instagram: ${err.message}`);
+      }
+    }),
+
+  // ═══════════════════════════════════════════
   // GENERAL
   // ═══════════════════════════════════════════
 
