@@ -13,6 +13,7 @@ import AgentDetailPage from './AgentDetailPage';
 import IntegrationsPage from './IntegrationsPage';
 import CampaignsPage from './CampaignsPage';
 import AdminDBPage from './AdminDBPage';
+import RHPage from './RHPage';
 
 const ALL_AVATARS = [
   './images/avatar-nora.png',
@@ -33,6 +34,7 @@ function Sidebar({ mobileOpen, onClose, onOpenApiKey }: { mobileOpen: boolean; o
   const navItems = [
     { path: '/dashboard', label: 'Accueil', icon: Home },
     { path: '/dashboard/agents', label: 'Mes Agents', icon: Bot },
+    { path: '/dashboard/rh', label: 'Espace RH', icon: Users },
     { path: '/dashboard/campaigns', label: 'Campagnes', icon: Megaphone },
     { path: '/dashboard/integrations', label: 'Intégrations', icon: Link2 },
     { path: '/dashboard/create', label: 'Créer un agent', icon: Plus },
@@ -502,6 +504,7 @@ export default function DashboardPage() {
             <Route path="/agents" element={<AgentListView />} />
             <Route path="/agent/:agentId" element={<AgentDetailPage />} />
             <Route path="/campaigns" element={<CampaignsPage />} />
+            <Route path="/rh" element={<RHPage />} />
             <Route path="/integrations" element={<IntegrationsPage />} />
             <Route path="/create" element={<CreateAgentView />} />
             <Route path="/admin/db" element={<AdminDBPage />} />

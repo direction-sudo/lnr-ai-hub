@@ -72,3 +72,102 @@ export const agentCalls = sqliteTable("agent_calls", {
   status: text("status", { enum: ["completed", "missed", "ongoing"] }).default("completed"),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
+
+// ═══════════════════════════════════════════════════════════════
+// LEO RH MODULE — Tables pour le recrutement et la gestion RH
+// ═══════════════════════════════════════════════════════════════
+
+// ─── Job Offers ───
+export const jobOffers = sqliteTable("job_offers", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  title: text("title").notNull(),
+  department: text("department"),
+  location: text("location"),
+  contractType: text("contract_type", { enum: ["cdi", "cdd", "stage", "alternance", "freelance"] }).default("cdi"),
+  description: text("description"),
+  requirements: text("requirements"),
+  salaryMin: integer("salary_min"),
+  salaryMax: integer("salary_max"),
+  status: text("status", { enum: ["draft", "published", "archived", "filled"] }).default("draft"),
+  publishedAt: integer("published_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+// ─── Candidates ───
+export const candidates = sqliteTable("candidates", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  linkedinUrl: text("linkedin_url"),
+  source: text("source", { enum: ["linkedin", "indeed", "welcometothejungle", "site_web", "recommandation", "candidature_spontanee", "autre"] }).default("autre"),
+  currentPosition: text("current_position"),
+  experienceYears: integer("experience_years"),
+  skills: text("skills", { mode: "json" }).$type<string[]>().default([]),
+  education: text("education"),
+  summary: text("summary"),
+  cvContent: text("cv_content"), // Contenu texte extrait du CV
+  cvFileName: text("cv_file_name"),
+  score: integer("score").default(0), // 0-100
+  status: text("status", { enum: ["new", "screening", "interview", "offer", "hired", "rejected", "onboarding"] }).default("new"),
+  jobOfferId: integer("job_offer_id", { mode: "number" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+// ─── Interviews ───
+export const interviews = sqliteTable("interviews", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  candidateId: integer("candidate_id", { mode: "number" }).notNull(),
+  jobOfferId: integer("job_offer_id", { mode: "number" }),
+  title: text("title").notNull(),
+  type: text("type", { enum: ["phone", "video", "onsite", "technical", "final"] }).default("phone"),
+  scheduledAt: integer("scheduled_at", { mode: "timestamp" }).notNull(),
+  duration: integer("duration").default(60), // minutes
+  interviewer: text("interviewer"),
+  location: text("location"),
+  notes: text("notes"),
+  rating: integer("rating"), // 1-5
+  feedback: text("feedback"),
+  status: text("status", { enum: ["scheduled", "completed", "cancelled", "no_show"] }).default("scheduled"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+// ─── Onboarding Steps ───
+export const onboardingSteps = sqliteTable("onboarding_steps", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  candidateId: integer("candidate_id", { mode: "number" }).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  category: text("category", { enum: ["admin", "technique", "formation", "integration", "evaluation"] }).default("admin"),
+  isCompleted: integer("is_completed", { mode: "boolean" }).default(false),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+  dueDate: integer("due_date", { mode: "timestamp" }),
+  assignedTo: text("assigned_to"),
+  order: integer("order").default(0),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+// ─── HR Metrics ───
+export const hrMetrics = sqliteTable("hr_metrics", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  date: text("date").notNull(), // YYYY-MM-DD
+  jobOfferId: integer("job_offer_id", { mode: "number" }),
+  metricType: text("metric_type", { enum: [
+    "time_to_hire",           // Jours moyens pour recruter
+    "cost_per_hire",          // Coût moyen par recrutement
+    "applications_count",     // Nombre de candidatures
+    "interviews_count",       // Nombre d'entretiens
+    "offers_accepted",        // Offres acceptées
+    "offers_declined",        // Offres refusées
+    "onboarding_completion",  // Taux completion onboarding
+    "source_effectiveness",   // Efficacité source
+    "screening_rate",         // Taux passage screening
+    "conversion_rate",        // Taux conversion entretien -> embauche
+  ] }).notNull(),
+  value: integer("value").notNull(),
+  unit: text("unit").default("count"), // count, percentage, days, euros
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});

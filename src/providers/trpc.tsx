@@ -449,6 +449,51 @@ Je suis là pour vous aider ! 💼`;
                 } else if (path === "ifttt.status") {
                   data = { connected: true, message: "IFTTT mock connected" };
                 }
+                // ─── RH (Leo) ───
+                else if (path === "rh.listJobOffers") {
+                  data = [
+                    { id: 1, title: "Développeur Full Stack", department: "Tech", location: "Paris", contractType: "cdi", description: "Développement d'applications web", requirements: "React, Node.js, 3 ans d'exp", salaryMin: 45000, salaryMax: 65000, status: "published", publishedAt: new Date(), createdAt: new Date(), updatedAt: new Date() },
+                    { id: 2, title: "Data Analyst", department: "Data", location: "Remote", contractType: "cdd", description: "Analyse de données financières", requirements: "SQL, Python, Power BI", salaryMin: 40000, salaryMax: 55000, status: "draft", publishedAt: null, createdAt: new Date(), updatedAt: new Date() },
+                  ];
+                } else if (path === "rh.listCandidates") {
+                  data = [
+                    { id: 1, firstName: "Jean", lastName: "Dupont", email: "jean@email.com", phone: "+33612345678", linkedinUrl: "https://linkedin.com/in/jean", source: "linkedin", currentPosition: "Développeur Frontend", experienceYears: 4, skills: ["react", "typescript", "next.js"], education: "Master Informatique", summary: "Développeur passionné", cvContent: "CV Jean Dupont...", cvFileName: "cv_jean.txt", score: 85, status: "interview", jobOfferId: 1, createdAt: new Date(), updatedAt: new Date() },
+                    { id: 2, firstName: "Marie", lastName: "Martin", email: "marie@email.com", phone: "+33687654321", linkedinUrl: "", source: "indeed", currentPosition: "Data Scientist", experienceYears: 3, skills: ["python", "sql", "machine learning"], education: "Master Data Science", summary: "Data scientist expérimentée", cvContent: "CV Marie Martin...", cvFileName: "cv_marie.txt", score: 78, status: "screening", jobOfferId: 2, createdAt: new Date(), updatedAt: new Date() },
+                    { id: 3, firstName: "Pierre", lastName: "Bernard", email: "pierre@email.com", phone: "", linkedinUrl: "https://linkedin.com/in/pierre", source: "recommandation", currentPosition: "Lead Dev", experienceYears: 7, skills: ["javascript", "node.js", "docker", "aws"], education: "Ingénieur", summary: "Lead technique", cvContent: "CV Pierre...", cvFileName: "", score: 92, status: "new", jobOfferId: null, createdAt: new Date(), updatedAt: new Date() },
+                  ];
+                } else if (path === "rh.listInterviews") {
+                  data = [
+                    { id: 1, candidateId: 1, jobOfferId: 1, title: "Entretien technique", type: "technical", scheduledAt: new Date(Date.now() + 86400000), duration: 60, interviewer: "Raad Yassir", location: "Salle A1", notes: "", rating: null, feedback: "", status: "scheduled", createdAt: new Date() },
+                    { id: 2, candidateId: 1, jobOfferId: 1, title: "Entretien RH", type: "phone", scheduledAt: new Date(Date.now() + 172800000), duration: 30, interviewer: "Leo AI", location: "Téléphonique", notes: "", rating: null, feedback: "", status: "scheduled", createdAt: new Date() },
+                  ];
+                } else if (path === "rh.getKpis") {
+                  data = {
+                    overview: { totalCandidates: 3, activeJobOffers: 1, totalJobOffers: 2, totalInterviews: 2, upcomingInterviews: 2, hiredCount: 0, averageScore: 85, thisMonthCandidates: 2, thisMonthInterviews: 1 },
+                    candidatesByStatus: [{ status: "new", count: 1 }, { status: "screening", count: 1 }, { status: "interview", count: 1 }],
+                    sourceBreakdown: [{ source: "linkedin", count: 1 }, { source: "indeed", count: 1 }, { source: "recommandation", count: 1 }],
+                    conversionFunnel: { new: 1, screening: 1, interview: 1, offer: 0, hired: 0 },
+                    rates: { screeningRate: 33, interviewRate: 33, offerRate: 0, hireRate: 0 },
+                  };
+                } else if (path === "rh.parseCv") {
+                  data = { firstName: "Jean", lastName: "Dupont", email: "jean@email.com", phone: "+33612345678", linkedinUrl: "", experienceYears: 5, skills: ["javascript", "react", "node.js"], education: "Master Informatique", summary: "Développeur expérimenté", score: 80 };
+                } else if (path === "rh.generateDocument") {
+                  const type = (json as Record<string, unknown>).type as string;
+                  const docs: Record<string, string> = {
+                    job_offer: "FICHE DE POSTE\n\nPoste : Développeur Full Stack\nDépartement : Tech\n\nMISSIONS\nDévelopper des applications web performantes.\n\nPRÉ-REQUIS\nReact, Node.js, 3 ans d'expérience.",
+                    interview_grid: "GRILLE D'ENTRETIEN\n\nQuestions techniques :\n1. Décrivez votre expérience\n2. Quels outils maîtrisez-vous ?\n\nQuestions comportementales :\n1. Comment travaillez-vous en équipe ?\n2. Où vous voyez-vous dans 3 ans ?",
+                    onboarding_plan: "PLAN D'INTEGRATION\n\nJour 1 : Accueil + présentation\nJour 2-3 : Formation technique\nJour 4-5 : Première mission",
+                    contract_template: "CONTRAT DE TRAVAIL\n\nENTRE : LNR Finance\nET : Le salarié\n\nARTICLE 1 : Poste de Développeur Full Stack",
+                    evaluation_report: "RAPPORT D'ÉVALUATION\n\nScore global : 85/100\n\nCompétences techniques : Excellente\nCulture d'entreprise : Bonne\nRecommandation : FORTE",
+                  };
+                  data = { content: docs[type] || docs.evaluation_report, type, generatedAt: new Date().toISOString() };
+                } else if (path === "rh.compareCandidates") {
+                  data = [
+                    { id: 1, firstName: "Jean", lastName: "Dupont", score: 85, experienceYears: 4, currentPosition: "Développeur Frontend", education: "Master Informatique", skills: ["react", "typescript"], interviewCount: 2, avgInterviewRating: 4.5, source: "linkedin" },
+                    { id: 2, firstName: "Marie", lastName: "Martin", score: 78, experienceYears: 3, currentPosition: "Data Scientist", education: "Master Data Science", skills: ["python", "sql"], interviewCount: 1, avgInterviewRating: 4.0, source: "indeed" },
+                  ];
+                } else if (path.startsWith("rh.")) {
+                  data = { success: true, id: ++nextId };
+                }
                 // ─── Admin ───
                 else if (path === "admin.stats") {
                   data = { tables: { agents: mockAgents.length, chatMessages: Object.values(mockMessages).flat().length }, totalTables: 2, dbPath: "mock" };

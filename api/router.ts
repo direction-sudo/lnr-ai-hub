@@ -4,6 +4,7 @@ import { agentRouter } from "./agent-router";
 import { socialRouter } from "./social-router";
 import { iftttRouter } from "./ifttt-router";
 import { adminRouter } from "./admin-router";
+import { rhRouter } from "./rh-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -14,6 +15,7 @@ export const appRouter = createRouter({
   social: socialRouter,
   ifttt: iftttRouter,
   admin: adminRouter,
+  rh: rhRouter,
 });
 
 export type AppRouter = typeof appRouter;
