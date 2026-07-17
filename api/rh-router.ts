@@ -210,6 +210,25 @@ RÈGLES : réponds UNIQUEMENT un JSON valide. Pas de markdown, pas de texte.`;
 
         const parsed = JSON.parse(jsonStr);
 
+        // Helper: convertir string en tableau
+        const toArray = (v: unknown): string[] => {
+          if (Array.isArray(v)) return v.filter((s): s is string => typeof s === "string");
+          if (typeof v === "string" && v.length > 0) return v.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+          return [];
+        };
+
+        // Normaliser les expériences (technologies peut être string)
+        const normalizeExperiences = (exps: unknown) => {
+          if (!Array.isArray(exps)) return [];
+          return exps.map((exp: any) => ({
+            title: exp.title || "",
+            company: exp.company || "",
+            duration: exp.duration || "",
+            description: exp.description || "",
+            technologies: toArray(exp.technologies),
+          }));
+        };
+
         // Validation et valeurs par défaut
         return {
           firstName: parsed.firstName || "",
@@ -219,23 +238,20 @@ RÈGLES : réponds UNIQUEMENT un JSON valide. Pas de markdown, pas de texte.`;
           address: parsed.address || "",
           title: parsed.title || "",
           summary: parsed.summary || "",
-          hardSkills: Array.isArray(parsed.hardSkills) ? parsed.hardSkills : [],
-          softSkills: Array.isArray(parsed.softSkills) ? parsed.softSkills : [],
-          languages: Array.isArray(parsed.languages) ? parsed.languages : [],
+          hardSkills: toArray(parsed.hardSkills),
+          softSkills: toArray(parsed.softSkills),
+          languages: toArray(parsed.languages),
           education: parsed.education || "",
-          certifications: Array.isArray(parsed.certifications) ? parsed.certifications : [],
-          experiences: Array.isArray(parsed.experiences) ? parsed.experiences : [],
-          companies: Array.isArray(parsed.companies) ? parsed.companies : [],
-          projects: Array.isArray(parsed.projects) ? parsed.projects : [],
-          tools: Array.isArray(parsed.tools) ? parsed.tools : [],
+          certifications: toArray(parsed.certifications),
+          experiences: normalizeExperiences(parsed.experiences),
+          companies: toArray(parsed.companies),
+          projects: toArray(parsed.projects),
+          tools: toArray(parsed.tools),
           yearsOfExperience: parsed.yearsOfExperience || 0,
           linkedinUrl: parsed.linkedinUrl || "",
           score: parsed.score || 0,
           aiConfidence: parsed.aiConfidence || 0,
-          skills: [
-            ...(Array.isArray(parsed.hardSkills) ? parsed.hardSkills : []),
-            ...(Array.isArray(parsed.tools) ? parsed.tools : []),
-          ],
+          skills: [...toArray(parsed.hardSkills), ...toArray(parsed.tools)],
         };
       } catch (err: any) {
         console.error("[parseCv] AI parsing error:", err.message);
