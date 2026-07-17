@@ -225,15 +225,39 @@ function CandidatesTab() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setParsedCv(null);
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const content = (ev.target?.result as string) || '';
+      let content = (ev.target?.result as string) || '';
+      // Pour les PDF binaires, readAsText donne du garbage — on nettoie
+      if (file.name.toLowerCase().endsWith('.pdf')) {
+        // Extraire le texte visible du PDF (texte brut entre les balises binaires)
+        const textMatches = content.match(/[\x20-\x7E\xC0-\xFF\s]{10,}/g);
+        if (textMatches) {
+          content = textMatches.join('\n');
+        }
+        // Si le contenu est toujours vide/garbage, on prévient
+        if (content.length < 50 || content.includes('%PDF')) {
+          content = content.replace(/[%\\]/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+      }
       setUploadContent(content);
-      parseCv.mutate(content, {
+      if (content.length < 10) {
+        setParsedCv({ error: 'Impossible d\'extraire le texte de ce fichier. Essayez un fichier .txt ou copiez-collez le contenu du CV.' });
+        return;
+      }
+      parseCv.mutate({ content }, {
         onSuccess: (data) => {
           setParsedCv(data);
         },
+        onError: (err) => {
+          console.error('[ParseCV] Error:', err);
+          setParsedCv({ error: 'Erreur lors de l\'analyse. Le fichier semble vide ou illisible.' });
+        },
       });
+    };
+    reader.onerror = () => {
+      setParsedCv({ error: 'Erreur de lecture du fichier.' });
     };
     reader.readAsText(file);
   };
@@ -324,15 +348,22 @@ function CandidatesTab() {
             <button onClick={() => { setShowUpload(false); setParsedCv(null); }} className="text-[#3F3F46] hover:text-[#FAFAFA]"><X size={16} /></button>
           </div>
 
-          {!parsedCv ? (
+          {parsedCv && 'error' in parsedCv ? (
+            <div className="text-center py-6">
+              <AlertCircle size={32} className="text-[#EF4444] mx-auto mb-3" />
+              <p className="text-sm text-[#FAFAFA] mb-2">{(parsedCv as any).error}</p>
+              <button onClick={() => { setParsedCv(null); fileInputRef.current?.click(); }}
+                className="text-xs text-[#D4A853] hover:underline">Réessayer avec un autre fichier</button>
+            </div>
+          ) : !parsedCv ? (
             <div
               onClick={() => fileInputRef.current?.click()}
               className="border-2 border-dashed border-[rgba(212,168,83,0.2)] rounded-2xl p-10 text-center hover:border-[#D4A853]/50 hover:bg-[rgba(212,168,83,0.02)] transition-all cursor-pointer"
             >
               <Upload size={28} className="text-[#D4A853] mx-auto mb-3" />
-              <p className="text-sm text-[#A1A1AA] mb-1">Cliquez pour importer un CV (TXT)</p>
+              <p className="text-sm text-[#A1A1AA] mb-1">Cliquez pour importer un CV (TXT, PDF)</p>
               <p className="text-xs text-[#3F3F46]">Leo analysera et extraira les informations clés</p>
-              <input ref={fileInputRef} type="file" accept=".txt,.md" className="hidden" onChange={handleFileUpload} />
+              <input ref={fileInputRef} type="file" accept=".txt,.md,.pdf" className="hidden" onChange={handleFileUpload} />
               {parseCv.isPending && (
                 <div className="mt-4 flex items-center justify-center gap-2 text-[#D4A853]">
                   <Loader2 size={14} className="animate-spin" />
