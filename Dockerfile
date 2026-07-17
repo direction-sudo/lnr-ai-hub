@@ -13,7 +13,7 @@ RUN apk add --no-cache python3 make g++
 COPY package.json package-lock.json ./
 
 # Installer les dépendances
-RUN npm ci --legacy-peer-deps --maxsockets 1
+RUN npm ci --legacy-peer-deps --maxsockets=5
 
 # Copier le code source
 COPY . .

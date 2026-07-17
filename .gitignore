@@ -29,3 +29,5 @@ Thumbs.db
 
 # Test
 coverage/
+*.zip
+lnr-ai-hub-*.zip
