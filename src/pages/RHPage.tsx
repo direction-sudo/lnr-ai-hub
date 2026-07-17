@@ -270,13 +270,27 @@ function CandidatesTab() {
       email: parsedCv.email || '',
       phone: parsedCv.phone || '',
       linkedinUrl: parsedCv.linkedinUrl || '',
-      experienceYears: parsedCv.experienceYears || 0,
-      skills: parsedCv.skills || [],
+      experienceYears: parsedCv.yearsOfExperience || parsedCv.experienceYears || 0,
+      skills: parsedCv.skills || parsedCv.hardSkills || [],
       education: parsedCv.education || '',
       summary: parsedCv.summary || '',
       cvContent: uploadContent,
       score: parsedCv.score || 0,
       status: 'new',
+      // Nouveaux champs IA
+      title: parsedCv.title || '',
+      address: parsedCv.address || '',
+      hardSkills: parsedCv.hardSkills || [],
+      softSkills: parsedCv.softSkills || [],
+      languages: parsedCv.languages || [],
+      certifications: parsedCv.certifications || [],
+      experiences: parsedCv.experiences || [],
+      companies: parsedCv.companies || [],
+      projects: parsedCv.projects || [],
+      tools: parsedCv.tools || [],
+      yearsOfExperience: parsedCv.yearsOfExperience || 0,
+      aiConfidence: parsedCv.aiConfidence || 0,
+      rawAnalysis: JSON.stringify(parsedCv),
     }, {
       onSuccess: () => {
         setShowUpload(false);
@@ -372,39 +386,175 @@ function CandidatesTab() {
               )}
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="glass-card p-4">
-                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-1">Nom</p>
-                  <p className="text-sm text-[#FAFAFA] font-semibold">{parsedCv.firstName} {parsedCv.lastName}</p>
+            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+              {/* En-tête : Nom + Score + Confiance IA */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-lg font-bold text-[#FAFAFA]">{parsedCv.firstName || '—'} {parsedCv.lastName || '—'}</p>
+                  {parsedCv.title && <p className="text-xs text-[#D4A853]">{parsedCv.title}</p>}
                 </div>
-                <div className="glass-card p-4">
-                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-1">Email</p>
-                  <p className="text-sm text-[#FAFAFA]">{parsedCv.email || '—'}</p>
-                </div>
-                <div className="glass-card p-4">
-                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-1">Téléphone</p>
-                  <p className="text-sm text-[#FAFAFA]">{parsedCv.phone || '—'}</p>
-                </div>
-                <div className="glass-card p-4">
-                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-1">Expérience</p>
-                  <p className="text-sm text-[#FAFAFA]">{parsedCv.experienceYears || 0} ans</p>
+                <div className="flex items-center gap-4">
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-[#D4A853]">{parsedCv.score || 0}</p>
+                    <p className="text-[9px] text-[#3F3F46] uppercase">Score</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-bold text-[#22C55E]">{parsedCv.aiConfidence || 0}%</p>
+                    <p className="text-[9px] text-[#3F3F46] uppercase">Confiance IA</p>
+                  </div>
                 </div>
               </div>
-              {parsedCv.skills && parsedCv.skills.length > 0 && (
+
+              {/* Informations de contact */}
+              <div className="grid sm:grid-cols-2 gap-3">
+                {parsedCv.email && (
+                  <div className="glass-card p-3">
+                    <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-1">Email</p>
+                    <p className="text-xs text-[#FAFAFA]">{parsedCv.email}</p>
+                  </div>
+                )}
+                {parsedCv.phone && (
+                  <div className="glass-card p-3">
+                    <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-1">Téléphone</p>
+                    <p className="text-xs text-[#FAFAFA]">{parsedCv.phone}</p>
+                  </div>
+                )}
+                {parsedCv.address && (
+                  <div className="glass-card p-3">
+                    <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-1">Adresse</p>
+                    <p className="text-xs text-[#FAFAFA]">{parsedCv.address}</p>
+                  </div>
+                )}
+                {parsedCv.yearsOfExperience > 0 && (
+                  <div className="glass-card p-3">
+                    <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-1">Expérience</p>
+                    <p className="text-xs text-[#FAFAFA]">{parsedCv.yearsOfExperience} ans</p>
+                  </div>
+                )}
+                {parsedCv.linkedinUrl && (
+                  <div className="glass-card p-3">
+                    <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-1">LinkedIn</p>
+                    <p className="text-xs text-[#A1A1AA] truncate">{parsedCv.linkedinUrl}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Résumé / Profil */}
+              {parsedCv.summary && (
+                <div className="glass-card p-4">
+                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-2">Profil</p>
+                  <p className="text-xs text-[#A1A1AA] leading-relaxed">{parsedCv.summary}</p>
+                </div>
+              )}
+
+              {/* Hard Skills */}
+              {parsedCv.hardSkills && parsedCv.hardSkills.length > 0 && (
                 <div>
-                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-2">Compétences détectées</p>
+                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-2">Hard Skills</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {parsedCv.skills.map((s: string) => (
+                    {parsedCv.hardSkills.map((s: string) => (
                       <span key={s} className="px-2 py-1 text-[10px] font-medium rounded-full bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.12)]">{s}</span>
                     ))}
                   </div>
                 </div>
               )}
-              <div className="flex items-center justify-between">
+
+              {/* Soft Skills */}
+              {parsedCv.softSkills && parsedCv.softSkills.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-2">Soft Skills</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {parsedCv.softSkills.map((s: string) => (
+                      <span key={s} className="px-2 py-1 text-[10px] font-medium rounded-full bg-[rgba(34,197,94,0.08)] text-[#22C55E] border border-[rgba(34,197,94,0.12)]">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Langues */}
+              {parsedCv.languages && parsedCv.languages.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-2">Langues</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {parsedCv.languages.map((s: string) => (
+                      <span key={s} className="px-2 py-1 text-[10px] font-medium rounded-full bg-[rgba(59,130,246,0.08)] text-[#3B82F6] border border-[rgba(59,130,246,0.12)]">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Diplômes */}
+              {parsedCv.education && (
+                <div className="glass-card p-4">
+                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-2">Formation</p>
+                  <p className="text-xs text-[#FAFAFA]">{parsedCv.education}</p>
+                </div>
+              )}
+
+              {/* Certifications */}
+              {parsedCv.certifications && parsedCv.certifications.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-2">Certifications</p>
+                  <div className="space-y-1">
+                    {parsedCv.certifications.map((s: string) => (
+                      <p key={s} className="text-xs text-[#A1A1AA]">• {s}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Outils */}
+              {parsedCv.tools && parsedCv.tools.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-2">Outils</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {parsedCv.tools.map((s: string) => (
+                      <span key={s} className="px-2 py-1 text-[10px] font-medium rounded-full bg-[#18181B] text-[#52525B] border border-white/[0.04]">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Expériences professionnelles */}
+              {parsedCv.experiences && parsedCv.experiences.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-2">Expériences professionnelles</p>
+                  <div className="space-y-2">
+                    {parsedCv.experiences.map((exp: any, i: number) => (
+                      <div key={i} className="glass-card p-3">
+                        <p className="text-xs font-semibold text-[#FAFAFA]">{exp.title || '—'}</p>
+                        <p className="text-[10px] text-[#D4A853]">{exp.company || '—'} {exp.duration && `· ${exp.duration}`}</p>
+                        {exp.description && <p className="text-[10px] text-[#52525B] mt-1">{exp.description}</p>}
+                        {exp.technologies && exp.technologies.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {exp.technologies.map((t: string) => (
+                              <span key={t} className="px-1.5 py-0.5 text-[9px] rounded-full bg-[rgba(212,168,83,0.06)] text-[#D4A853]">{t}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Projets */}
+              {parsedCv.projects && parsedCv.projects.length > 0 && (
+                <div>
+                  <p className="text-[10px] text-[#3F3F46] uppercase tracking-wider mb-2">Projets</p>
+                  <div className="space-y-1">
+                    {parsedCv.projects.map((s: string) => (
+                      <p key={s} className="text-xs text-[#A1A1AA]">• {s}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Bouton Enregistrer */}
+              <div className="flex items-center justify-between pt-2 border-t border-white/[0.04]">
                 <div className="flex items-center gap-2">
                   <Star size={14} className="text-[#D4A853]" />
-                  <span className="text-sm text-[#FAFAFA] font-semibold">Score : {parsedCv.score}/100</span>
+                  <span className="text-sm text-[#FAFAFA] font-semibold">Score LEO : {parsedCv.score}/100</span>
                 </div>
                 <button onClick={handleSaveParsed}
                   className="btn-gold text-sm px-5 py-2 rounded-xl"

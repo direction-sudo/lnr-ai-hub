@@ -108,9 +108,27 @@ export const candidates = sqliteTable("candidates", {
   skills: text("skills", { mode: "json" }).$type<string[]>().default([]),
   education: text("education"),
   summary: text("summary"),
-  cvContent: text("cv_content"), // Contenu texte extrait du CV
+  cvContent: text("cv_content"), // Contenu texte brut du CV
   cvFileName: text("cv_file_name"),
-  score: integer("score").default(0), // 0-100
+
+  // ─── Champs extraits par l'IA Kimi (analyse sémantique) ───
+  title: text("title"), // Titre / poste recherché
+  address: text("address"), // Adresse complète
+  hardSkills: text("hard_skills", { mode: "json" }).$type<string[]>(), // Compétences techniques
+  softSkills: text("soft_skills", { mode: "json" }).$type<string[]>(), // Compétences comportementales
+  languages: text("languages", { mode: "json" }).$type<string[]>(), // Langues parlées
+  certifications: text("certifications", { mode: "json" }).$type<string[]>(), // Certifications
+  experiences: text("experiences", { mode: "json" }).$type<{
+    title: string; company: string; duration: string; description: string; technologies: string[];
+  }[]>(), // Expériences professionnelles
+  companies: text("companies", { mode: "json" }).$type<string[]>(), // Entreprises
+  projects: text("projects", { mode: "json" }).$type<string[]>(), // Projets réalisés
+  tools: text("tools", { mode: "json" }).$type<string[]>(), // Outils maîtrisés
+  yearsOfExperience: integer("years_of_experience"), // Années d'expérience totale
+  aiConfidence: integer("ai_confidence").default(0), // Score de confiance IA (0-100)
+  rawAnalysis: text("raw_analysis"), // Résultat brut de l'analyse IA
+
+  score: integer("score").default(0), // 0-100 (score global LEO)
   status: text("status", { enum: ["new", "screening", "interview", "offer", "hired", "rejected", "onboarding"] }).default("new"),
   jobOfferId: integer("job_offer_id", { mode: "number" }),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),

@@ -1,8 +1,10 @@
 import { z } from "zod";
-import { createRouter, publicQuery, authedQuery } from "./middleware";
+import { createRouter, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { candidates, jobOffers, interviews, onboardingSteps, hrMetrics } from "@db/schema";
-import { eq, desc, and, sql, gte, lte } from "drizzle-orm";
+import { eq, desc, sql, gte } from "drizzle-orm";
+import { chatCompletion } from "./ai-service";
+import { env } from "./lib/env";
 
 // ═══════════════════════════════════════════════
 // LEO RH ROUTER — Recrutement & Gestion RH
@@ -152,74 +154,125 @@ export const rhRouter = createRouter({
       return { ok: true };
     }),
 
-  // Parse CV content (extract key info)
+  // ═══════════════════════════════════════════════════
+  // Parse CV via API Kimi — Analyse sémantique intelligente
+  // ═══════════════════════════════════════════════════
   parseCv: publicQuery
     .input(z.object({ content: z.string().min(10) }))
     .mutation(async ({ input }) => {
-      // Simple rule-based parsing (can be enhanced with AI)
-      const content = input.content.toLowerCase();
-      const lines = input.content.split('\n');
+      const apiKey = env.kimiApiKey;
+      if (!apiKey) {
+        throw new Error("KIMI_API_KEY non configurée. Impossible d'analyser le CV.");
+      }
 
-      // Extract name (first line often contains name)
-      const nameMatch = input.content.match(/^([A-Z][a-z]+\s+[A-Z][a-z]+)/m);
-      const firstName = nameMatch ? nameMatch[1].split(' ')[0] : '';
-      const lastName = nameMatch ? nameMatch[1].split(' ').slice(1).join(' ') : '';
+      const systemPrompt = `Tu es Leo, un expert RH et analyste de CV pour LNR Finance. Ta mission est d'analyser un CV de manière sémantique et contextuelle — tu ne dois PAS te fier à des libellés fixes comme "Nom:", "Prénom:", "Email:".
 
-      // Extract email
-      const emailMatch = input.content.match(/[\w.-]+@[\w.-]+\.\w+/);
-      const email = emailMatch ? emailMatch[0] : '';
+Tu dois comprendre le CONTENU et le CONTEXTE du CV pour en extraire les informations, quels que soient :
+- La langue (français, anglais, ou mixte)
+- Le format (avec ou sans sections clairement nommées)
+- L'ordre des informations
+- La mise en page (une ou plusieurs colonnes)
 
-      // Extract phone
-      const phoneMatch = input.content.match(/(\+33|0)[\s.]?[1-9](?:[\s.]?\d{2}){4}/);
-      const phone = phoneMatch ? phoneMatch[0] : '';
+Règles d'extraction :
+1. NOM et PRÉNOM : identifie la personne par son nom complet, généralement en début de CV. Ex: "Amine Dridi" → prénom: Amine, nom: Dridi. Ex: "John Smith" → prénom: John, nom: Smith.
+2. EMAIL : cherche un format email valide (xxx@yyy.zzz)
+3. TÉLÉPHONE : cherche un numéro avec indicatif (+216, +33, +1...) ou format local
+4. ADRESSE : ville, pays, ou adresse complète si présente
+5. TITRE / POSTE : le titre professionnel (ex: "Software Engineer", "Développeur Full Stack")
+6. RÉSUMÉ / PROFIL : paragraphe de description du candidat (2-3 phrases max)
+7. HARD SKILLS : compétences techniques (langages, frameworks, outils, méthodologies)
+8. SOFT SKILLS : compétences comportementales (leadership, communication, travail d'équipe...)
+9. LANGUES : langues parlées avec niveau si indiqué
+10. DIPLÔMES : formations académiques (Bachelor, Master, Licence, Ingénieur...)
+11. CERTIFICATIONS : certifications professionnelles
+12. EXPÉRIENCES : tableau d'objets {title, company, duration, description, technologies}
+13. ENTREPRISES : liste des entreprises où le candidat a travaillé
+14. PROJETS : projets significatifs mentionnés
+15. OUTILS : outils et logiciels maîtrisés
+16. ANNÉES D'EXPÉRIENCE : calcule le total d'années d'expérience professionnelle
 
-      // Extract LinkedIn
-      const linkedinMatch = input.content.match(/linkedin\.com\/in\/[^\s]+/);
-      const linkedinUrl = linkedinMatch ? `https://${linkedinMatch[0]}` : '';
+TU DOIS RÉPONDRE UNIQUEMENT avec un objet JSON valide, sans texte avant ou après. Format :
+{
+  "firstName": "",
+  "lastName": "",
+  "email": "",
+  "phone": "",
+  "address": "",
+  "title": "",
+  "summary": "",
+  "hardSkills": [],
+  "softSkills": [],
+  "languages": [],
+  "education": "",
+  "certifications": [],
+  "experiences": [{"title":"","company":"","duration":"","description":"","technologies":[]}],
+  "companies": [],
+  "projects": [],
+  "tools": [],
+  "yearsOfExperience": 0,
+  "linkedinUrl": "",
+  "score": 0,
+  "aiConfidence": 0
+}
 
-      // Extract experience years
-      const expMatch = input.content.match(/(\d+)\+?\s*(ans|années|years)\s+d['\']?expérience/i);
-      const experienceYears = expMatch ? parseInt(expMatch[1]) : 0;
+Le score (0-100) évalue la qualité globale du candidat.
+L'aiConfidence (0-100) indique ton niveau de confiance dans l'extraction.`;
 
-      // Extract skills (common tech/business skills)
-      const commonSkills = [
-        'javascript', 'typescript', 'python', 'java', 'c++', 'c#', 'go', 'rust', 'ruby', 'php',
-        'react', 'vue', 'angular', 'node.js', 'express', 'next.js', 'nuxt',
-        'sql', 'postgresql', 'mysql', 'mongodb', 'redis', 'elasticsearch',
-        'aws', 'azure', 'gcp', 'docker', 'kubernetes', 'terraform', 'jenkins', 'github actions',
-        'excel', 'powerpoint', 'word', 'power bi', 'tableau',
-        'agile', 'scrum', 'kanban', 'jira', 'confluence',
-        'management', 'leadership', 'recrutement', 'formation',
-        'marketing', 'seo', 'sea', 'google analytics',
-        'finance', 'comptabilité', 'analyse financière', 'investissement',
-        'français', 'anglais', 'espagnol', 'allemand', 'mandarin',
-        'communication', 'négociation', 'gestion de projet', 'stratégie',
-      ];
-      const foundSkills = commonSkills.filter(skill => content.includes(skill));
+      try {
+        const aiResponse = await chatCompletion(apiKey, [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Analyse ce CV et extrais toutes les informations pertinentes :\n\n${input.content}` },
+        ], { temperature: 0.3, maxTokens: 4000 });
 
-      // Extract education keywords
-      const educationKeywords = ['bachelor', 'master', 'phd', 'doctorat', 'licence', 'master', 'mba', 'ingénieur', 'bac+', 'diplôme'];
-      const education = lines.find(line =>
-        educationKeywords.some(kw => line.toLowerCase().includes(kw))
-      ) || '';
+        // Extraire le JSON de la réponse
+        let jsonStr = aiResponse;
+        // Chercher un bloc JSON
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jsonStr = jsonMatch[0];
+        }
 
-      // Score: simple heuristic based on experience + skills
-      const score = Math.min(100, Math.round(
-        (experienceYears * 5) + (foundSkills.length * 3) + 20
-      ));
+        const parsed = JSON.parse(jsonStr);
 
-      return {
-        firstName,
-        lastName,
-        email,
-        phone,
-        linkedinUrl,
-        experienceYears: experienceYears || 0,
-        skills: foundSkills,
-        education: education.trim(),
-        summary: lines.slice(0, 3).join(' ').trim(),
-        score,
-      };
+        // Validation et valeurs par défaut
+        return {
+          firstName: parsed.firstName || "",
+          lastName: parsed.lastName || "",
+          email: parsed.email || "",
+          phone: parsed.phone || "",
+          address: parsed.address || "",
+          title: parsed.title || "",
+          summary: parsed.summary || "",
+          hardSkills: Array.isArray(parsed.hardSkills) ? parsed.hardSkills : [],
+          softSkills: Array.isArray(parsed.softSkills) ? parsed.softSkills : [],
+          languages: Array.isArray(parsed.languages) ? parsed.languages : [],
+          education: parsed.education || "",
+          certifications: Array.isArray(parsed.certifications) ? parsed.certifications : [],
+          experiences: Array.isArray(parsed.experiences) ? parsed.experiences : [],
+          companies: Array.isArray(parsed.companies) ? parsed.companies : [],
+          projects: Array.isArray(parsed.projects) ? parsed.projects : [],
+          tools: Array.isArray(parsed.tools) ? parsed.tools : [],
+          yearsOfExperience: parsed.yearsOfExperience || 0,
+          linkedinUrl: parsed.linkedinUrl || "",
+          score: parsed.score || 0,
+          aiConfidence: parsed.aiConfidence || 0,
+          skills: [
+            ...(Array.isArray(parsed.hardSkills) ? parsed.hardSkills : []),
+            ...(Array.isArray(parsed.tools) ? parsed.tools : []),
+          ],
+        };
+      } catch (err: any) {
+        console.error("[parseCv] AI parsing error:", err.message);
+        // Fallback : retourner une structure vide avec l'erreur
+        return {
+          firstName: "", lastName: "", email: "", phone: "", address: "",
+          title: "", summary: "", hardSkills: [], softSkills: [], languages: [],
+          education: "", certifications: [], experiences: [], companies: [],
+          projects: [], tools: [], yearsOfExperience: 0, linkedinUrl: "",
+          score: 0, aiConfidence: 0, skills: [],
+          error: `Erreur d'analyse IA: ${err.message}`,
+        };
+      }
     }),
 
   // ═══════════════════════════════════════════
