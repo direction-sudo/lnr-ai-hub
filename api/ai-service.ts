@@ -10,7 +10,8 @@ export async function chatCompletion(
   messages: ChatCompletionMessage[],
   options?: { temperature?: number; maxTokens?: number }
 ): Promise<string> {
-  const res = await fetch(`${env.kimiOpenUrl}/v1/chat/completions`, {
+  const kimiUrl = env.kimiOpenUrl || "https://api.moonshot.ai";
+  const res = await fetch(`${kimiUrl}/v1/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

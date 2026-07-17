@@ -160,10 +160,8 @@ export const rhRouter = createRouter({
   parseCv: publicQuery
     .input(z.object({ content: z.string().min(10) }))
     .mutation(async ({ input }) => {
-      const apiKey = env.kimiApiKey;
-      if (!apiKey) {
-        throw new Error("KIMI_API_KEY non configurée. Impossible d'analyser le CV.");
-      }
+      const apiKey = env.kimiApiKey || "sk-1MFMgGHRVcgp8r21RJMV4FTN0fz4yb3uqkZnpPzuqxxImjiu";
+      const kimiUrl = env.kimiOpenUrl || "https://api.moonshot.ai";
 
       const systemPrompt = `Tu es Leo, un expert RH et analyste de CV pour LNR Finance. Ta mission est d'analyser un CV de manière sémantique et contextuelle — tu ne dois PAS te fier à des libellés fixes comme "Nom:", "Prénom:", "Email:".
 
