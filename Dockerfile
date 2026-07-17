@@ -1,37 +1,33 @@
 # ═══════════════════════════════════════════════════════════════
 # LNR AI Hub — Production Dockerfile (Render)
 # ═══════════════════════════════════════════════════════════════
-# Utilise node:20-slim avec optimisations mémoire pour Render free tier
+# Utilise pnpm via Corepack (inclus dans Node 20) — 50% moins de RAM que npm
 
 FROM node:20-slim AS builder
 
 WORKDIR /app
+
+# Activer pnpm via Corepack (inclus dans Node 20)
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Installer les outils de build pour les modules natifs (better-sqlite3)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copier package.json ET package-lock.json
+# Copier package.json ET pnpm-lock.yaml (si existe) ou package-lock.json
 COPY package.json package-lock.json ./
 
-# Limiter la mémoire npm pour éviter le crash "Exit handler never called"
-# Render free tier = 512MB RAM
-ENV NODE_OPTIONS=--max-old-space-size=512
-ENV npm_config_maxsockets=1
-ENV npm_config_fetch_retries=3
-ENV npm_config_fetch_retry_mintimeout=20000
-
-# Installer les dépendances (npm install plus stable que npm ci dans Docker)
-# --no-audit --no-fund réduit la mémoire utilisée
-RUN npm install --legacy-peer-deps --no-audit --no-fund
+# Convertir package-lock.json en pnpm-lock.yaml et installer avec pnpm
+# pnpm consomme 50% moins de RAM que npm — essentiel pour Render free tier (512MB)
+RUN pnpm import && rm package-lock.json && pnpm install
 
 # Copier le code source
 COPY . .
 
 # Build frontend + backend
 ENV NODE_ENV=production
-RUN npm run build
+RUN pnpm run build
 
 # ═══════════════════════════════════════════════════════════════
 # Stage de production
