@@ -12,8 +12,9 @@ RUN apk add --no-cache python3 make g++
 # Copier package.json ET package-lock.json
 COPY package.json package-lock.json ./
 
-# Installer les dépendances
-RUN npm install --legacy-peer-deps
+# Installer les dépendances (npm ci est plus fiable que npm install en production)
+# --maxsockets=1 évite le bug "Exit handler never called" de npm dans Docker Alpine
+RUN npm ci --legacy-peer-deps --maxsockets=1 || (cat /root/.npm/_logs/*.log && exit 1)
 
 # Copier le code source
 COPY . .
