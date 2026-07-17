@@ -3,7 +3,7 @@
 # ═══════════════════════════════════════════════════════════════
 # Utilise pnpm via Corepack (inclus dans Node 20) — 50% moins de RAM que npm
 
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 
 WORKDIR /app
 
@@ -33,7 +33,7 @@ RUN pnpm run build
 # Stage de production
 # ═══════════════════════════════════════════════════════════════
 
-FROM node:20-slim
+FROM node:22-slim
 
 WORKDIR /app
 
