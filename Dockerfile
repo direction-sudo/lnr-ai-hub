@@ -17,8 +17,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # npm 10.x a un bug "Exit handler never called" dans Docker Alpine/Debian
 RUN npm install -g npm@9.9.4
 
-# Copier les fichiers de dépendances
-COPY package.json package-lock.json ./
+# Copier package.json (SANS package-lock.json car généré sur sandbox chinoise)
+# npm install sans lockfile utilise registry.npmjs.org (accessible mondiallement)
+COPY package.json ./
 
 # Étape 1 : Installer TOUT (dependencies + devDependencies) pour le build
 RUN npm install --legacy-peer-deps
