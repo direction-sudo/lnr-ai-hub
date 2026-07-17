@@ -31,3 +31,4 @@ Thumbs.db
 coverage/
 *.zip
 lnr-ai-hub-*.zip
+package-lock.json

@@ -31,8 +31,9 @@ COPY . .
 ENV NODE_ENV=production
 RUN npm run build
 
-# Étape 3 : Supprimer les devDependencies (réduit la taille de 40%)
-RUN npm prune --production
+# NOTE: npm prune --production retiré car package-lock contient des URLs
+# du miroir chinois (npm.mirrors.msh.team) inaccessibles depuis Render.
+# On garde toutes les deps — l'image est plus grosse mais fiable.
 
 # ═══════════════════════════════════════════════════════════════
 # Stage de production — image minimale
