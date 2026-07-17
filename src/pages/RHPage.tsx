@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react';
 import {
   Users, Briefcase, CalendarDays, ClipboardCheck, BarChart3,
-  Plus, Search, Upload, Trash2, Download, ChevronRight, Star,
-  FileText, Check, X, Clock, TrendingUp, Target, Award,
-  Filter, Eye, FileUp, ChevronDown, XCircle, CheckCircle,
-  AlertCircle, Loader2, ArrowRight, FileDown
+  Plus, Search, Upload, Trash2, Star,
+  FileText, Check, X, TrendingUp, Target, Award,
+  Filter, Eye, FileUp, CheckCircle,
+  AlertCircle, Loader2, FileDown
 } from 'lucide-react';
 import { useRH } from '@/hooks/useRH';
 
