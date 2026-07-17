@@ -1,7 +1,7 @@
 # ═══════════════════════════════════════════════════════════════
 # LNR AI Hub — Production Dockerfile (Render)
 # ═══════════════════════════════════════════════════════════════
-# Utilise node:20-slim (Debian) car npm crash dans Alpine
+# Utilise node:20-slim avec optimisations mémoire pour Render free tier
 
 FROM node:20-slim AS builder
 
@@ -15,16 +15,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copier package.json ET package-lock.json
 COPY package.json package-lock.json ./
 
-# Installer les dépendances avec npm ci (outil fiable pour la production)
-RUN npm ci --legacy-peer-deps
+# Limiter la mémoire npm pour éviter le crash "Exit handler never called"
+# Render free tier = 512MB RAM
+ENV NODE_OPTIONS=--max-old-space-size=512
+ENV npm_config_maxsockets=1
+ENV npm_config_fetch_retries=3
+ENV npm_config_fetch_retry_mintimeout=20000
+
+# Installer les dépendances (npm install plus stable que npm ci dans Docker)
+# --no-audit --no-fund réduit la mémoire utilisée
+RUN npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copier le code source
 COPY . .
 
-# Définir NODE_ENV pour que esbuild inclue le bloc serve()
-ENV NODE_ENV=production
-
 # Build frontend + backend
+ENV NODE_ENV=production
 RUN npm run build
 
 # ═══════════════════════════════════════════════════════════════
