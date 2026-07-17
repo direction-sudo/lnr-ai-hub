@@ -163,63 +163,41 @@ export const rhRouter = createRouter({
       const apiKey = env.kimiApiKey || "sk-1MFMgGHRVcgp8r21RJMV4FTN0fz4yb3uqkZnpPzuqxxImjiu";
       const kimiUrl = env.kimiOpenUrl || "https://api.moonshot.ai";
 
-      const systemPrompt = `Tu es Leo, un expert RH et analyste de CV pour LNR Finance. Ta mission est d'analyser un CV de manière sémantique et contextuelle — tu ne dois PAS te fier à des libellés fixes comme "Nom:", "Prénom:", "Email:".
+      const systemPrompt = `Tu es Leo, expert RH IA. Analyse ce CV de manière sémantique — ne te fie pas aux libellés.
 
-Tu dois comprendre le CONTENU et le CONTEXTE du CV pour en extraire les informations, quels que soient :
-- La langue (français, anglais, ou mixte)
-- Le format (avec ou sans sections clairement nommées)
-- L'ordre des informations
-- La mise en page (une ou plusieurs colonnes)
+EXTRAIS ces champs :
+- firstName/lastName : nom en début de CV (ex: "Amine Dridi" → Amine/Dridi)
+- email : format xxx@yyy.zzz
+- phone : numéro avec indicatif
+- address : ville/pays
+- title : poste visé
+- summary : profil en 2 phrases
+- hardSkills : compétences techniques []
+- softSkills : comportementales []
+- languages : langues []
+- education : diplômes
+- certifications : []
+- experiences : [{title, company, duration, description, technologies}]
+- companies : []
+- projects : []
+- tools : []
+- yearsOfExperience : nombre
+- linkedinUrl : URL LinkedIn
+- score : qualité 0-100
+- aiConfidence : confiance 0-100
 
-Règles d'extraction :
-1. NOM et PRÉNOM : identifie la personne par son nom complet, généralement en début de CV. Ex: "Amine Dridi" → prénom: Amine, nom: Dridi. Ex: "John Smith" → prénom: John, nom: Smith.
-2. EMAIL : cherche un format email valide (xxx@yyy.zzz)
-3. TÉLÉPHONE : cherche un numéro avec indicatif (+216, +33, +1...) ou format local
-4. ADRESSE : ville, pays, ou adresse complète si présente
-5. TITRE / POSTE : le titre professionnel (ex: "Software Engineer", "Développeur Full Stack")
-6. RÉSUMÉ / PROFIL : paragraphe de description du candidat (2-3 phrases max)
-7. HARD SKILLS : compétences techniques (langages, frameworks, outils, méthodologies)
-8. SOFT SKILLS : compétences comportementales (leadership, communication, travail d'équipe...)
-9. LANGUES : langues parlées avec niveau si indiqué
-10. DIPLÔMES : formations académiques (Bachelor, Master, Licence, Ingénieur...)
-11. CERTIFICATIONS : certifications professionnelles
-12. EXPÉRIENCES : tableau d'objets {title, company, duration, description, technologies}
-13. ENTREPRISES : liste des entreprises où le candidat a travaillé
-14. PROJETS : projets significatifs mentionnés
-15. OUTILS : outils et logiciels maîtrisés
-16. ANNÉES D'EXPÉRIENCE : calcule le total d'années d'expérience professionnelle
+RÈGLES : réponds UNIQUEMENT un JSON valide. Pas de markdown, pas de texte.`;
 
-TU DOIS RÉPONDRE UNIQUEMENT avec un objet JSON valide, sans texte avant ou après. Format :
-{
-  "firstName": "",
-  "lastName": "",
-  "email": "",
-  "phone": "",
-  "address": "",
-  "title": "",
-  "summary": "",
-  "hardSkills": [],
-  "softSkills": [],
-  "languages": [],
-  "education": "",
-  "certifications": [],
-  "experiences": [{"title":"","company":"","duration":"","description":"","technologies":[]}],
-  "companies": [],
-  "projects": [],
-  "tools": [],
-  "yearsOfExperience": 0,
-  "linkedinUrl": "",
-  "score": 0,
-  "aiConfidence": 0
-}
-
-Le score (0-100) évalue la qualité globale du candidat.
-L'aiConfidence (0-100) indique ton niveau de confiance dans l'extraction.`;
+      // Tronquer le CV si trop long (modèle 8k = max ~6000 tokens pour le CV)
+      const maxCvChars = 12000;
+      const truncatedContent = input.content.length > maxCvChars
+        ? input.content.substring(0, maxCvChars) + "\n[...CV tronqué, contenu trop long]"
+        : input.content;
 
       try {
         const aiResponse = await chatCompletion(apiKey, [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Analyse ce CV et extrais toutes les informations pertinentes :\n\n${input.content}` },
+          { role: "user", content: `CV:\n${truncatedContent}` },
         ], { temperature: 0.3, maxTokens: 4000 });
 
         // Extraire le JSON de la réponse
