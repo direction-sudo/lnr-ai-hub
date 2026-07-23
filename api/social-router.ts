@@ -386,6 +386,44 @@ export const socialRouter = createRouter({
     }),
 
   // ═══════════════════════════════════════════
+  // V2 — Facebook : List available pages (publicQuery)
+  // ═══════════════════════════════════════════
+
+  listFacebookPagesV2: publicQuery
+    .input(z.object({ accessToken: z.string() }))
+    .query(async ({ input }) => {
+      try {
+        const accountsRes = await fetch(
+          `${FACEBOOK_API_URL}/me/accounts?fields=id,name,category,fan_count,picture&access_token=${input.accessToken}`
+        );
+
+        if (!accountsRes.ok) {
+          const err = await accountsRes.text();
+          console.error("[Facebook V2] /me/accounts error:", err);
+          throw new Error("Impossible d'obtenir les pages. Vérifiez votre token.");
+        }
+
+        const accountsData = (await accountsRes.json()) as {
+          data: { id: string; name: string; category: string; fan_count?: number; picture?: { data: { url: string } } }[];
+        };
+
+        return {
+          pages: accountsData.data.map(p => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            fanCount: p.fan_count ?? 0,
+            picture: p.picture?.data?.url ?? null,
+          })),
+          count: accountsData.data.length,
+        };
+      } catch (err: any) {
+        console.error("[Facebook V2] listPages error:", err.message);
+        throw new Error(`Erreur: ${err.message}`);
+      }
+    }),
+
+  // ═══════════════════════════════════════════
   // V2 — Facebook : Test page access (publicQuery)
   // ═══════════════════════════════════════════
 

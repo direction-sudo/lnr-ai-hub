@@ -9,6 +9,7 @@ import {
 import { useChat } from '@/hooks/useChat';
 import { useAgent } from '@/hooks/useAgent';
 import { useSocial } from '@/hooks/useSocial';
+import type { FacebookPage } from '@/hooks/useSocial';
 import type { ChatMessage as Message } from '@/hooks/useRealChat';
 
 type Tab = 'conversation' | 'calls' | 'knowledge' | 'analytics' | 'settings';
@@ -127,7 +128,23 @@ function ConversationTab({ agent }: { agent: { id: number; name: string; avatar:
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
-  const { publishPost: socialPublish, isPublishing: socialPublishing } = useSocial();
+  const {
+    publishPost: socialPublish,
+    isPublishing: socialPublishing,
+    fbPages,
+    isLoadingPages,
+    loadFacebookPages,
+    selectFacebookPage,
+    getConnection,
+  } = useSocial();
+
+  // Auto-load Facebook pages when FB is selected and no page configured
+  useEffect(() => {
+    const fbConn = getConnection('facebook');
+    if (publishPlatforms.includes('facebook') && fbConn?.accessToken && !fbConn?.pageId && fbPages.length === 0) {
+      loadFacebookPages();
+    }
+  }, [publishPlatforms, getConnection, fbPages.length, loadFacebookPages]);
 
   const handlePublish = async (msgContent: string) => {
     try {
@@ -227,6 +244,41 @@ function ConversationTab({ agent }: { agent: { id: number; name: string; avatar:
                         </button>
                       ))}
                     </div>
+
+                    {/* Facebook Page Selector */}
+                    {publishPlatforms.includes('facebook') && (
+                      <div className="mb-2">
+                        {fbPages.length > 0 ? (
+                          <select
+                            value={getConnection('facebook')?.pageId ?? ''}
+                            onChange={(e) => {
+                              const page = fbPages.find(p => p.id === e.target.value);
+                              if (page) selectFacebookPage(page);
+                            }}
+                            className="w-full text-[10px] bg-[#0D0D0F] border border-white/[0.06] rounded-lg px-2 py-1.5 text-[#FAFAFA] focus:outline-none focus:border-[#D4A853]/30"
+                          >
+                            <option value="" disabled>Sélectionner une page...</option>
+                            {fbPages.map(page => (
+                              <option key={page.id} value={page.id}>
+                                {page.name} ({page.fanCount.toLocaleString()} fans)
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <button
+                            onClick={loadFacebookPages}
+                            disabled={isLoadingPages}
+                            className="w-full text-[10px] bg-[#0D0D0F] border border-white/[0.06] rounded-lg px-2 py-1.5 text-[#D4A853] hover:bg-[#D4A853]/5 transition-all flex items-center justify-center gap-1"
+                          >
+                            {isLoadingPages ? (
+                              <><Loader2 size={10} className="animate-spin" /> Chargement...</>
+                            ) : (
+                              <>Charger mes pages Facebook</>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    )}
                     <button
                       onClick={() => handlePublish(msg.content)}
                       disabled={isPublishing || socialPublishing || publishPlatforms.length === 0}
