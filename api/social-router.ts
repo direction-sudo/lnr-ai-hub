@@ -386,6 +386,79 @@ export const socialRouter = createRouter({
     }),
 
   // ═══════════════════════════════════════════
+  // V2 — Facebook : Test page access (publicQuery)
+  // ═══════════════════════════════════════════
+
+  testPageAccess: publicQuery
+    .input(z.object({
+      pageId: z.string(),
+      accessToken: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        // Test 1: Get page info
+        const pageRes = await fetch(
+          `${FACEBOOK_API_URL}/${input.pageId}?fields=name,id,category,is_published&access_token=${input.accessToken}`
+        );
+        const pageData = await pageRes.json() as any;
+
+        if (pageData.error) {
+          return {
+            canPublish: false,
+            pageName: null,
+            error: pageData.error.message,
+            suggestion: "Vous n'avez pas accès à cette page. Vérifiez que vous êtes admin.",
+          };
+        }
+
+        // Test 2: Try to publish a test post
+        const testRes = await fetch(`${FACEBOOK_API_URL}/${input.pageId}/feed`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: "🧪 Test LNR AI Hub — Ceci est un test de connexion",
+            access_token: input.accessToken,
+          }),
+        });
+        const testData = await testRes.json() as any;
+
+        if (testData.error) {
+          return {
+            canPublish: false,
+            pageName: pageData.name,
+            error: testData.error.message,
+            suggestion: testData.error.code === 200
+              ? "Vous devez être ADMIN de la page pour publier. Demandez à l'admin de vous ajouter."
+              : "Erreur de permission. Vérifiez votre token.",
+          };
+        }
+
+        // Delete test post
+        if (testData.id) {
+          await fetch(`${FACEBOOK_API_URL}/${testData.id}?access_token=${input.accessToken}`, {
+            method: "DELETE",
+          });
+        }
+
+        return {
+          canPublish: true,
+          pageName: pageData.name,
+          pageId: pageData.id,
+          category: pageData.category,
+          error: null,
+          suggestion: null,
+        };
+      } catch (err: any) {
+        return {
+          canPublish: false,
+          pageName: null,
+          error: err.message,
+          suggestion: "Erreur réseau. Réessayez plus tard.",
+        };
+      }
+    }),
+
+  // ═══════════════════════════════════════════
   // V2 — LinkedIn (publicQuery, token direct)
   // ═══════════════════════════════════════════
 
