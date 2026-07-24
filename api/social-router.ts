@@ -7,9 +7,10 @@ const LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken";
 const LINKEDIN_API_URL = "https://api.linkedin.com/v2";
 
 // ─── Facebook OAuth Config ───
-const FACEBOOK_AUTH_URL = "https://www.facebook.com/v18.0/dialog/oauth";
-const FACEBOOK_TOKEN_URL = "https://graph.facebook.com/v18.0/oauth/access_token";
-const FACEBOOK_API_URL = "https://graph.facebook.com/v18.0";
+const FACEBOOK_AUTH_URL = "https://www.facebook.com/v22.0/dialog/oauth";
+const FACEBOOK_TOKEN_URL = "https://graph.facebook.com/v22.0/oauth/access_token";
+const FACEBOOK_API_URL = "https://graph.facebook.com/v22.0";
+const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID ?? "1952872092048274";
 
 // ─── In-memory token storage (replace with DB in production) ───
 interface SocialToken {
@@ -170,7 +171,7 @@ export const socialRouter = createRouter({
 
   // Get Facebook OAuth URL
   getFacebookAuthUrl: authedQuery.query(({ ctx }) => {
-    const appId = process.env.FACEBOOK_APP_ID ?? "";
+    const appId = FACEBOOK_APP_ID;
     const redirectUri = `${process.env.APP_URL ?? "http://localhost:3000"}/api/oauth/callback/facebook`;
     const state = Buffer.from(ctx.user.id.toString()).toString("base64");
 
@@ -190,7 +191,7 @@ export const socialRouter = createRouter({
   connectFacebook: authedQuery
     .input(z.object({ code: z.string(), state: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const appId = process.env.FACEBOOK_APP_ID ?? "";
+      const appId = FACEBOOK_APP_ID;
       const appSecret = process.env.FACEBOOK_APP_SECRET ?? "";
       const redirectUri = `${process.env.APP_URL ?? "http://localhost:3000"}/api/oauth/callback/facebook`;
 
@@ -406,7 +407,7 @@ export const socialRouter = createRouter({
   getFacebookConnectUrl: publicQuery
     .input(z.object({ redirectUri: z.string().optional() }))
     .query(({ input }) => {
-      const appId = process.env.FACEBOOK_APP_ID ?? "1012620020675238";
+      const appId = FACEBOOK_APP_ID;
       const redirectUri = input.redirectUri ?? `${process.env.APP_URL ?? "https://lnr-ai-hub.onrender.com"}/api/trpc/social.facebookCallback`;
       const state = Buffer.from(Date.now().toString()).toString("base64");
 
@@ -424,7 +425,7 @@ export const socialRouter = createRouter({
     .input(z.object({ code: z.string(), state: z.string() }))
     .query(async ({ input }) => {
       try {
-        const appId = process.env.FACEBOOK_APP_ID ?? "1012620020675238";
+        const appId = FACEBOOK_APP_ID;
         const appSecret = process.env.FACEBOOK_APP_SECRET ?? "";
         const redirectUri = `${process.env.APP_URL ?? "https://lnr-ai-hub.onrender.com"}/api/trpc/social.facebookCallback`;
 
