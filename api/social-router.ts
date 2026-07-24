@@ -408,7 +408,7 @@ export const socialRouter = createRouter({
     .input(z.object({ redirectUri: z.string().optional() }))
     .query(({ input }) => {
       const appId = FACEBOOK_APP_ID;
-      const redirectUri = input.redirectUri ?? `${process.env.APP_URL ?? "https://lnr-ai-hub.onrender.com"}/api/trpc/social.facebookCallback`;
+      const redirectUri = input.redirectUri ?? `${process.env.APP_URL ?? "https://lnr-ai-hub.onrender.com"}/api/oauth/callback/facebook`;
       const state = Buffer.from(Date.now().toString()).toString("base64");
 
       const url = new URL(FACEBOOK_AUTH_URL);
@@ -427,7 +427,7 @@ export const socialRouter = createRouter({
       try {
         const appId = FACEBOOK_APP_ID;
         const appSecret = process.env.FACEBOOK_APP_SECRET ?? "";
-        const redirectUri = `${process.env.APP_URL ?? "https://lnr-ai-hub.onrender.com"}/api/trpc/social.facebookCallback`;
+        const redirectUri = `${process.env.APP_URL ?? "https://lnr-ai-hub.onrender.com"}/api/oauth/callback/facebook`;
 
         // Exchange code for user access token
         const tokenRes = await fetch(
