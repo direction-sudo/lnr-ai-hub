@@ -329,48 +329,62 @@ export const socialRouter = createRouter({
   // V2 — Public endpoints (API key auth, token passed directly)
   // ═══════════════════════════════════════════
 
-  // Publish to Facebook Page (V2 — converts user token to page token)
+  // Publish to Facebook Page (V2 — accepts user token or page token)
   publishFacebookPostV2: publicQuery
     .input(
       z.object({
         text: z.string().min(1).max(5000),
         pageId: z.string(),
         accessToken: z.string(),
+        pageToken: z.string().optional(), // Optional: if provided, used directly
       })
     )
     .mutation(async ({ input }) => {
-      // Step 1: Get page access token from user token
-      const accountsRes = await fetch(
-        `${FACEBOOK_API_URL}/me/accounts?access_token=${input.accessToken}`
-      );
+      let tokenToUse = input.pageToken;
+      let pageName = input.pageId;
 
-      if (!accountsRes.ok) {
-        const err = await accountsRes.text();
-        console.error("[Facebook V2] /me/accounts error:", err);
-        throw new Error("Impossible d'obtenir les pages. Vérifiez votre token.");
-      }
-
-      const accountsData = (await accountsRes.json()) as {
-        data: { id: string; name: string; access_token: string }[];
-      };
-
-      const page = accountsData.data.find((p) => p.id === input.pageId);
-      if (!page) {
-        throw new Error(
-          `Page ${input.pageId} non trouvée. Pages disponibles: ${accountsData.data.map((p) => p.name).join(", ")}`
+      // If no pageToken provided, try to get one from user token
+      if (!tokenToUse) {
+        const accountsRes = await fetch(
+          `${FACEBOOK_API_URL}/me/accounts?access_token=${input.accessToken}`
         );
+
+        if (!accountsRes.ok) {
+          const err = await accountsRes.text();
+          console.error("[Facebook V2] /me/accounts error:", err);
+          throw new Error("Impossible d'obtenir les pages. Vérifiez votre token.");
+        }
+
+        const accountsData = (await accountsRes.json()) as {
+          data: { id: string; name: string; access_token: string }[];
+        };
+
+        const page = accountsData.data.find((p) => p.id === input.pageId);
+        if (!page) {
+          throw new Error(
+            `Page ${input.pageId} non trouvée. Pages disponibles: ${accountsData.data.map((p) => p.name).join(", ")}`
+          );
+        }
+
+        tokenToUse = page.access_token;
+        pageName = page.name;
+        console.log(`[Facebook V2] Using page token for "${page.name}"`);
+      } else {
+        // Get page name with page token
+        const infoRes = await fetch(
+          `${FACEBOOK_API_URL}/${input.pageId}?fields=name&access_token=${tokenToUse}`
+        );
+        const info = await infoRes.json() as { name?: string };
+        pageName = info.name ?? input.pageId;
       }
 
-      const pageToken = page.access_token;
-      console.log(`[Facebook V2] Using page token for "${page.name}"`);
-
-      // Step 2: Publish with page token
+      // Publish with page token
       const postRes = await fetch(`${FACEBOOK_API_URL}/${input.pageId}/feed`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: input.text,
-          access_token: pageToken,
+          access_token: tokenToUse,
         }),
       });
 
@@ -382,7 +396,77 @@ export const socialRouter = createRouter({
 
       const result = (await postRes.json()) as { id: string };
       console.log("[Facebook V2] Published:", result.id);
-      return { success: true, postId: result.id, pageName: page.name };
+      return { success: true, postId: result.id, pageName };
+    }),
+
+  // ═══════════════════════════════════════════
+  // V2 — Facebook : OAuth Connect Flow (publicQuery)
+  // ═══════════════════════════════════════════
+
+  getFacebookConnectUrl: publicQuery
+    .input(z.object({ redirectUri: z.string().optional() }))
+    .query(({ input }) => {
+      const appId = process.env.FACEBOOK_APP_ID ?? "1012620020675238";
+      const redirectUri = input.redirectUri ?? `${process.env.APP_URL ?? "https://lnr-ai-hub.onrender.com"}/api/trpc/social.facebookCallback`;
+      const state = Buffer.from(Date.now().toString()).toString("base64");
+
+      const url = new URL(FACEBOOK_AUTH_URL);
+      url.searchParams.set("client_id", appId);
+      url.searchParams.set("redirect_uri", redirectUri);
+      url.searchParams.set("state", state);
+      url.searchParams.set("scope", "pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish");
+      url.searchParams.set("response_type", "code");
+
+      return { url: url.toString(), state };
+    }),
+
+  facebookCallback: publicQuery
+    .input(z.object({ code: z.string(), state: z.string() }))
+    .query(async ({ input }) => {
+      try {
+        const appId = process.env.FACEBOOK_APP_ID ?? "1012620020675238";
+        const appSecret = process.env.FACEBOOK_APP_SECRET ?? "";
+        const redirectUri = `${process.env.APP_URL ?? "https://lnr-ai-hub.onrender.com"}/api/trpc/social.facebookCallback`;
+
+        // Exchange code for user access token
+        const tokenRes = await fetch(
+          `${FACEBOOK_TOKEN_URL}?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&client_secret=${appSecret}&code=${input.code}`
+        );
+
+        if (!tokenRes.ok) {
+          const err = await tokenRes.text();
+          return { success: false, error: `Token exchange failed: ${err}` };
+        }
+
+        const tokenData = (await tokenRes.json()) as { access_token: string; expires_in?: number };
+        const userToken = tokenData.access_token;
+
+        // Get user's pages with page tokens
+        const pagesRes = await fetch(
+          `${FACEBOOK_API_URL}/me/accounts?fields=id,name,category,fan_count,picture,access_token&access_token=${userToken}`
+        );
+        const pagesData = (await pagesRes.json()) as {
+          data: { id: string; name: string; category: string; fan_count?: number; picture?: { data: { url: string } }; access_token: string }[];
+        };
+
+        const pages = pagesData.data.map(p => ({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          fanCount: p.fan_count ?? 0,
+          picture: p.picture?.data?.url ?? null,
+          pageToken: p.access_token,
+        }));
+
+        return {
+          success: true,
+          userToken,
+          pages,
+          count: pages.length,
+        };
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
     }),
 
   // ═══════════════════════════════════════════
