@@ -119,87 +119,327 @@ export async function sendMessageToAI(
 }
 
 // ─── Simulated responses (when no API key) ───
+// Uses keyword detection + random selection + anti-repetition history
+
+let lastNoraIndex = -1;
+let lastLeoIndex = -1;
+
+function pickRandomIndex(total: number, lastIndex: number): number {
+  if (total <= 1) return 0;
+  let idx = Math.floor(Math.random() * total);
+  // Avoid same response twice in a row
+  while (idx === lastIndex) {
+    idx = Math.floor(Math.random() * total);
+  }
+  return idx;
+}
+
 function getSimulatedResponse(agentSlug: string, message: string): string {
-  const responses: Record<string, string[]> = {
-    nora: [
-      `Je vais vous aider avec votre communication ! Pour : "${message}", voici ce que je propose :
+  const lowerMsg = message.toLowerCase().trim();
 
-**Option 1** — Tone professionnel
-"${message}" 🚀
+  // ─── NORA (Communication) ───
+  if (agentSlug === 'nora') {
+    // Keyword-based responses
+    if (lowerMsg.includes('courage') || lowerMsg.includes('motivation') || lowerMsg.includes('inspir')) {
+      return `Voici un post sur le courage, prêt à publier :
 
-**Option 2** — Tone storytelling  
-"Vous savez, ${message}... C'est exactement ce qui passionne notre communauté." ✨
+📝 **Post LinkedIn** :
+"Le courage ne consiste pas à avoir peur. Le courage, c'est avancer malgré la peur.
 
-**Option 3** — Tone impact
-"STOP. ${message} ? Voilà pourquoi ça change tout." 💥
+Chez LNR Finance, on rencontre chaque jour des défis qui nous poussent hors de notre zone de confort. C'est précisément là que la magie opère.
 
-Quelle version préférez-vous ?`,
+💡 Ce que le courage vous apporte :
+• La capacité de prendre des décisions difficiles
+• La résilience face aux obstacles
+• L'innovation qui naît du risque calculé
 
-      `Excellente idée pour "${message}" ! Voici un post LinkedIn prêt à publier :
+Quel est le dernier acte courageux que vous avez posé dans votre carrière ? Partagez en commentaires 👇"
 
-📝 **Version LinkedIn (pro)** :
-"${message}. Chez LNR Finance, on croit que l'excellence opérationnelle fait la différence. C'est pourquoi nos équipes travaillent chaque jour à optimiser nos processus pour mieux servir nos clients."
+📊 **Hashtags** : #Courage #Leadership #Motivation #LNRFinance #Mindset
 
-📊 **Hashtags** : #Finance #Excellence #Innovation
+Voulez-vous une version plus courte pour Instagram ou une version storytelling ?`;
+    }
 
-Voulez-vous une version Instagram ou Facebook ?`,
+    if (lowerMsg.includes('calendrier') || lowerMsg.includes('planning') || lowerMsg.includes('editorial')) {
+      return `Voici votre calendrier éditorial pour la semaine prochaine :
 
-      `Pour votre calendrier éditorial sur "${message}" :
+📅 **Planning LNR Finance** :
 
-📅 **Planning semaine type** :
-- **Lundi 9h** : Post motivation (tone inspirant)
-- **Mercredi 14h** : Carrousel tips (tone éducatif)
-- **Vendredi 17h** : Post bilan (tone communautaire)
+**Lundi 9h** — Post motivation
+💬 "Le succès appartient à ceux qui se lèvent tôt... et qui persistent."
 
-🎯 **Thèmes de la semaine** : ${message}
+**Mardi 14h** — Carrousel "3 erreurs à éviter en 2026"
+💡 Contenu éducatif + visuel accrocheur
 
-Voulez-vous que je développe chaque post ?`,
-    ],
-    leo: [
+**Mercredi 11h** — Témoignage client
+🎤 Interview avec un client satisfait
+
+**Jeudi 16h** — Reel/Vidéo courte
+🎬 "1 minute pour comprendre..."
+
+**Vendredi 10h** — Post coulisses
+🏢 Photo de l'équipe + moment convivial
+
+**Samedi 11h** — Quiz/Interaction
+❓ "Devinez lequel de ces 3 conseils est le plus efficace"
+
+Voulez-vous que je rédige chaque post en détail ?`;
+    }
+
+    if (lowerMsg.includes('post') && (lowerMsg.includes('linkedin') || lowerMsg.includes('réseau'))) {
+      return `Voici 3 posts LinkedIn prêts à publier pour LNR Finance :
+
+🚀 **Post 1 — Corporate**
+"Nous sommes fiers d'accompagner plus de 500 familles dans leur gestion de patrimoine. Chaque chiffre cache une histoire, chaque client est une relation de confiance."
+
+✨ **Post 2 — Storytelling**
+"Il y a 3 ans, Marie nous a confié son avenir financier avec un peu d'appréhension. Aujourd'hui, elle vient de signer l'achat de sa résidence secondaire. Voilà pourquoi on se lève le matin."
+
+💥 **Post 3 — Chiffre d'impact**
+"35% : c'est le gain moyen de performance que nos clients ont réalisé en 2025. Et si 2026 était votre année ?"
+
+Quel ton préférez-vous ?`;
+    }
+
+    if (lowerMsg.includes('idee') || lowerMsg.includes('idée') || lowerMsg.includes('suggestion')) {
+      return `Voici 10 idées de posts pour LNR Finance :
+
+1. 📊 **Infographie** : "Les chiffres clés du marché immobilier 2026"
+2. 🎤 **Témoignage** : Interview d'un client sur son parcours
+3. 💡 **Tips** : "3 erreurs fiscales à éviter cette année"
+4. 🏆 **Behind the scenes** : Journée type d'un conseiller LNR
+5. ❓ **Quiz** : "Testez vos connaissances en gestion de patrimoine"
+6. 📅 **Actualité** : Comment réagir à la dernière réforme fiscale
+7. 🎯 **Mythbuster** : "5 idées reçues sur l'investissement locatif"
+8. 📈 **Résultats** : Bilan trimestriel avec chiffres réels
+9. 👥 **Équipe** : Portrait d'un collaborateur
+10. 🎁 **Giveaway** : "Gagnez un audit patrimonial gratuit"
+
+Voulez-vous que je développe l'une de ces idées ?`;
+    }
+
+    if (lowerMsg.includes('bonjour') || lowerMsg.includes('salut') || lowerMsg.includes('hello') || lowerMsg === 'bonjour' || lowerMsg === 'salut') {
+      return `Bonjour ! 👋 Je suis Nora, votre community manager IA.
+
+Comment puis-je vous aider aujourd'hui ?
+
+Voici ce que je peux faire pour vous :
+
+📝 **Rédiger des posts** LinkedIn, Instagram, Facebook
+📅 **Créer un calendrier éditorial** complet
+📊 **Analyser vos performances** réseaux sociaux
+🎨 **Proposer des visuels** et concepts créatifs
+📬 **Rédiger des newsletters** engageantes
+
+Quel est votre besoin du jour ?`;
+    }
+
+    // Generic Nora responses (randomized, anti-repetition)
+    const genericNora = [
+      `Je vais créer du contenu sur "${message}" ! Voici 3 approches :
+
+🎯 **Approche 1 — Éducatif**
+"Tout ce que vous devez savoir sur ${message}. Thread 🧵"
+
+🎯 **Approche 2 — Storytelling**
+"Je me souviens quand on a découvert ${message} chez LNR. Ça a tout changé..."
+
+🎯 **Approche 3 — Direct**
+"${message} ? Voici notre méthode éprouvée en 5 étapes 👇"
+
+Quelle approche vous parle le plus ?`,
+
+      `Excellent sujet ! Pour "${message}", je propose cette stratégie :
+
+📋 **Plan de contenu** :
+1. **Post principal** (LinkedIn) : Le sujet en profondeur
+2. **Carousel** (Instagram) : 5 slides récapitulatives
+3. **Story** : Sondage + CTA vers le post
+4. **Reel** : Version courte et dynamique
+
+🎨 **Visuel suggéré** : Design noir/doré avec typographie élégante
+
+Voulez-vous que je rédige le post principal ?`,
+
+      `Pour "${message}", voici un post prêt à publier :
+
+📝 **Version LinkedIn** :
+"Chez LNR Finance, ${message} fait partie de notre ADN. Depuis 10 ans, nous accompagnons nos clients avec la même exigence : l'excellence personnalisée.
+
+💡 Notre différence ?
+→ Un conseiller dédié
+→ Une stratégie sur mesure
+→ Des résultats mesurables
+
+Prêt à franchir le prochain cap ? Contactez-nous."
+
+📊 **Hashtags** : #LNRFinance #GestionDePatrimoine #Excellence
+
+Voulez-vous une version plus courte pour Instagram ?`,
+    ];
+    const idx = pickRandomIndex(genericNora.length, lastNoraIndex);
+    lastNoraIndex = idx;
+    return genericNora[idx];
+  }
+
+  // ─── LEO (RH) ───
+  if (agentSlug === 'leo') {
+    if (lowerMsg.includes('offre') || lowerMsg.includes('poste') || lowerMsg.includes('emploi') || lowerMsg.includes('recrut')) {
+      return `Voici une fiche de poste attractive pour LNR Finance :
+
+📝 **LNR Finance recrute : Conseiller en Gestion de Patrimoine H/F**
+
+📍 **Localisation** : Nice (06) — hybride
+💼 **Type** : CDI
+💰 **Rémunération** : 35-50K + commissions
+
+🎯 **Missions** :
+• Accueillir et conseiller une clientèle de particuliers
+• Élaborer des stratégies patrimoniales personnalisées
+• Développer votre portefeuille client ( prospection + fidélisation)
+• Participer aux événements de l'entreprise
+
+💡 **Profil recherché** :
+• Bac+3 minimum (finance, éco, commerce)
+• 2+ ans d'expérience en conseil patrimonial
+• Excellent relationnel et sens du service
+• Esprit d'équipe et ambition
+
+Intéressé ? Postulez directement !`;
+    }
+
+    if (lowerMsg.includes('cv') || lowerMsg.includes('screening') || lowerMsg.includes('candidat')) {
+      return `Process de screening CV activé ! Voici la méthode LNR :
+
+📋 **Grille d'évaluation** (score /100) :
+
+| Critère | Pondération |
+|---------|------------|
+| Formation | 15 pts |
+| Expérience pertinente | 25 pts |
+| Compétences techniques | 20 pts |
+| Soft skills / Culture fit | 20 pts |
+| Motivation / Lettre | 10 pts |
+| Recommandations | 10 pts |
+
+✅ **Seuil de qualification** : 70/100
+✅ **Seuil 'Top candidat'** : 85/100
+
+Envoyez-moi un CV à analyser, je vous donne le score détaillé !`;
+    }
+
+    if (lowerMsg.includes('entretien') || lowerMsg.includes('interview')) {
+      return `Voici une grille d'entretien type pour LNR Finance :
+
+📋 **Questions comportementales** (STAR method) :
+1. "Décrivez une situation où vous avez dû gérer un client difficile"
+2. "Racontez un échec professionnel et ce que vous en avez appris"
+3. "Comment priorisez-vous vos tâches quand tout est urgent ?"
+
+📋 **Questions techniques** :
+4. "Expliquez la différence entre SCPI et OPCI en 2 minutes"
+5. "Comment évaluez-vous la tolérance au risque d'un client ?"
+6. "Quels sont les 3 produits d'assurance-vie les plus adaptés à un profil senior ?"
+
+📋 **Questions LNR Culture** :
+7. "Pourquoi LNR Finance et pas un autre ?"
+8. "Où vous voyez-vous dans 3 ans ?"
+
+Voulez-vous que j'ajoute des questions spécifiques à un poste ?`;
+    }
+
+    if (lowerMsg.includes('onboarding') || lowerMsg.includes('intégration') || lowerMsg.includes('nouveau')) {
+      return `Parcours d'onboarding LNR Finance — Semaine 1 :
+
+📅 **Jour 1 — Welcome Day**
+• 9h : Accueil + badge + matériel
+• 10h : Présentation équipe + café d'intégration
+• 11h : Formation CRM + outils internes
+• 14h : Shadowing avec mentor assigné
+• 16h : Quiz ludique sur l'histoire LNR
+
+📅 **Jour 2 — Produit**
+• Formation produits et services LNR
+• Étude de cas réel avec correction
+
+📅 **Jour 3 — Terrain**
+• Observation de rendez-vous client
+• Premier contact (supervisé)
+
+📅 **Jour 4 — Autonomie**
+• Premier rendez-vous en solo (feedback après)
+
+📅 **Jour 5 — Bilan**
+• Retour avec manager
+• Objectifs mois 1 définis
+
+Voulez-vous le programme complet du mois 1 ?`;
+    }
+
+    if (lowerMsg.includes('bonjour') || lowerMsg.includes('salut') || lowerMsg === 'bonjour' || lowerMsg === 'salut') {
+      return `Bonjour ! 👔 Je suis Leo, votre responsable RH IA.
+
+Comment puis-je vous aider aujourd'hui ?
+
+Voici mes domaines d'expertise :
+
+📝 **Rédiger des offres d'emploi** attractives
+📋 **Screening de CV** avec scoring
+🎤 **Grilles d'entretien** personnalisées
+📅 **Planning RH** et organisation
+📊 **Rapports et KPIs** recrutement
+📚 **Onboarding** nouveaux collaborateurs
+
+Quel est votre besoin ?`;
+    }
+
+    // Generic Leo responses (randomized)
+    const genericLeo = [
       `Je vais analyser "${message}" du point de vue RH !
 
-📋 **Analyse** :
-- Compétences clés identifiées
-- Expérience requise : 3-5 ans
-- Culture fit : Aligné avec les valeurs LNR
+📋 **Analyse rapide** :
+• Profil recherché : Expérimenté avec expertise en ${message}
+• Niveau : Confirmé (3-5 ans)
+• Salaire marché : 40-55K selon expérience
+• Difficulté de recrutement : Modérée
 
-🎯 **Recommandation** :
-Préparer une grille d'entretien avec 3 questions comportementales et 2 questions techniques.
+🎯 **Stratégie de sourcing** :
+1. LinkedIn (principale)
+2. Cooptation interne
+3. Welcome to the Jungle
 
 Voulez-vous que je rédige l'offre complète ?`,
 
-      `Pour votre process de recrutement sur "${message}" :
+      `Pour "${message}", voici mon recommandation RH :
 
-📝 **Fiche de poste** (prêt à publier) :
-**Poste** : ${message}
-**Mission** : Piloter et optimiser les processus opérationnels
-**Profil** : Bac+5, 3-5 ans d'expérience, esprit d'analyse
+📊 **Benchmark marché** :
+| Poste | Salaire min | Salaire max | Délai moyen |
+|-------|-------------|-------------|-------------|
+| Junior | 32K | 38K | 21 jours |
+| Confirmé | 40K | 50K | 35 jours |
+| Senior | 55K | 70K | 45 jours |
 
-📍 **Canaux de diffusion** :
-1. LinkedIn (principal)
-2. Welcome to the Jungle
-3. Indeed
-
-Voulez-vous la version complète ?`,
-
-      `Voici un rapport RH sur "${message}" :
-
-📊 **KPIs Recrutement** :
-| Métrique | Valeur |
-|----------|--------|
-| Time-to-hire | 28 jours |
-| Cost-per-hire | 2 500€ |
-| Taux de rétention | 94% |
-
-💡 **Recommandation** :
-Mettre en place un programme de cooptation pour réduire le cost-per-hire de 20%.
+💡 **Conseil** : Mettez en avant la flexibilité (télétravail) et la culture d'entreprise dans l'offre. C'est ce qui fait la différence en 2026.
 
 Besoin d'un rapport plus détaillé ?`,
-    ],
-  };
 
-  const agentResponses = responses[agentSlug] || responses.default;
-  // Deterministic selection based on message content
-  const index = message.length % agentResponses.length;
-  return agentResponses[index];
+      `Action plan pour "${message}" :
+
+✅ **Étape 1** : Définir le profil idéal (compétences + culture fit)
+✅ **Étape 2** : Rédiger l'offre avec mots-clés SEO
+✅ **Étape 3** : Diffuser sur 3 canaux minimum
+✅ **Étape 4** : Grille de screening + scoring
+✅ **Étape 5** : Entretiens structurés (45 min)
+✅ **Étape 6** : Offre + négociation
+✅ **Étape 7** : Onboarding sur 30 jours
+
+Temps estimé : 4-6 semaines. On commence par quelle étape ?`,
+    ];
+    const idx = pickRandomIndex(genericLeo.length, lastLeoIndex);
+    lastLeoIndex = idx;
+    return genericLeo[idx];
+  }
+
+  // Fallback
+  return `C'est noté ! Je travaille sur "${message}" et je reviens vers vous avec une solution complète. Souhaitez-vous des précisions sur un point particulier ?`;
 }
