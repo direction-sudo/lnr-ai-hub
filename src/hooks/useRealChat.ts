@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { sendMessageToAI, hasApiKey } from '@/lib/ai-service';
 import { MOCK_AGENTS } from '@/providers/mockData';
 import { trpc } from '@/providers/trpc';
@@ -26,6 +26,15 @@ export interface Agent {
   isDefault: string;
   status: string;
   createdAt: Date;
+}
+
+// ─── Persistent nextId ───
+function getNextId(): number {
+  const stored = localStorage.getItem('lnr_next_msg_id');
+  const id = stored ? parseInt(stored, 10) : 1000;
+  const next = id + 1;
+  localStorage.setItem('lnr_next_msg_id', next.toString());
+  return next;
 }
 
 // ─── Load agents from localStorage or use defaults ───
@@ -77,8 +86,6 @@ function saveMessages(messages: Record<number, ChatMessage[]>) {
   localStorage.setItem('lnr_messages', JSON.stringify(messages));
 }
 
-let nextId = 1000;
-
 export function useRealChat() {
   const [agents, setAgents] = useState<Agent[]>(loadAgents);
   const [messages, setMessages] = useState<Record<number, ChatMessage[]>>(loadMessages);
@@ -86,6 +93,10 @@ export function useRealChat() {
   const [isCreating, setIsCreating] = useState(false);
   const [apiKeyConfigured] = useState(hasApiKey);
   const [isPublishing, setIsPublishing] = useState(false);
+
+  // Use ref to always access latest messages without stale closure
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
 
   // tRPC mutation for IFTTT publishing
   const publishMutation = trpc.ifttt.publish.useMutation();
@@ -97,17 +108,20 @@ export function useRealChat() {
   // ─── Get history for an agent ───
   const getHistory = useCallback((agentId: number | null): ChatMessage[] => {
     if (!agentId) return [];
-    return messages[agentId] ?? [];
-  }, [messages]);
+    return messagesRef.current[agentId] ?? [];
+  }, []);
 
-  // ─── Send message ───
+  // ─── Send message (fixed: no stale closure on messages) ───
   const sendMessage = useCallback(async (agentId: number, content: string) => {
     const agent = agents.find(a => a.id === agentId);
     if (!agent) return;
 
-    // Add user message
+    // Prevent double-send
+    if (isSending) return;
+
+    // Add user message using functional update
     const userMsg: ChatMessage = {
-      id: ++nextId,
+      id: getNextId(),
       agentId,
       role: "user",
       content,
@@ -121,29 +135,45 @@ export function useRealChat() {
 
     setIsSending(true);
 
-    // Call AI
-    const history = messages[agentId] ?? [];
-    const aiResponse = await sendMessageToAI(
-      agent.slug,
-      history.map(m => ({ role: m.role, content: m.content })),
-      content
-    );
+    try {
+      // Call AI — use messagesRef to get latest history
+      const history = messagesRef.current[agentId] ?? [];
+      const aiResponse = await sendMessageToAI(
+        agent.slug,
+        history.map(m => ({ role: m.role, content: m.content })),
+        content
+      );
 
-    const agentMsg: ChatMessage = {
-      id: ++nextId,
-      agentId,
-      role: "agent",
-      content: aiResponse,
-      createdAt: new Date(),
-    };
+      const agentMsg: ChatMessage = {
+        id: getNextId(),
+        agentId,
+        role: "agent",
+        content: aiResponse,
+        createdAt: new Date(),
+      };
 
-    setMessages(prev => {
-      const updated = { ...prev, [agentId]: [...(prev[agentId] ?? []), agentMsg] };
-      return updated;
-    });
-
-    setIsSending(false);
-  }, [agents, messages]);
+      setMessages(prev => {
+        const updated = { ...prev, [agentId]: [...(prev[agentId] ?? []), agentMsg] };
+        return updated;
+      });
+    } catch (err) {
+      console.error("[sendMessage] Error:", err);
+      // Add error message
+      const errorMsg: ChatMessage = {
+        id: getNextId(),
+        agentId,
+        role: "agent",
+        content: "❌ Une erreur s'est produite. Veuillez réessayer.",
+        createdAt: new Date(),
+      };
+      setMessages(prev => {
+        const updated = { ...prev, [agentId]: [...(prev[agentId] ?? []), errorMsg] };
+        return updated;
+      });
+    } finally {
+      setIsSending(false);
+    }
+  }, [agents, isSending]);
 
   // ─── Publish content to social media ───
   const publishContent = useCallback(async (content: string, platforms: string[]) => {
@@ -212,7 +242,7 @@ export function useRealChat() {
 
   // ─── Get analytics (mock) ───
   const getAnalytics = useCallback((agentId: number) => {
-    const agentMessages = messages[agentId] ?? [];
+    const agentMessages = messagesRef.current[agentId] ?? [];
     return {
       totals: {
         messages: agentMessages.length,
@@ -222,7 +252,7 @@ export function useRealChat() {
       },
       daily: [],
     };
-  }, [messages]);
+  }, []);
 
   return {
     agents,

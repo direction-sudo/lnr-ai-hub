@@ -29,10 +29,10 @@ export default function AgentDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('conversation');
   const id = Number(agentId) || 0;
 
-  const { agents, getHistory } = useChat();
-  const { getById } = useAgent();
-  const { data: agentDetail } = getById(id);
-  const agent = agents.find(a => a.id === id) || agentDetail;
+  // useChat called ONCE here — passed down to child tabs
+  const chat = useChat();
+  const { agents, getHistory, sendMessage, isSending, publishContent, isPublishing } = chat;
+  const agent = agents.find(a => a.id === id) || null;
 
   if (!agent) {
     return (
@@ -93,7 +93,16 @@ export default function AgentDetailPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
-        {activeTab === 'conversation' && <ConversationTab agent={agent} />}
+        {activeTab === 'conversation' && (
+          <ConversationTab
+            agent={agent}
+            sendMessage={sendMessage}
+            isSending={isSending}
+            getHistory={getHistory}
+            publishContent={publishContent}
+            isPublishing={isPublishing}
+          />
+        )}
         {activeTab === 'calls' && <CallsTab agent={agent} />}
         {activeTab === 'knowledge' && <KnowledgeTab agent={agent} />}
         {activeTab === 'analytics' && <AnalyticsTab agent={agent} />}
@@ -104,11 +113,24 @@ export default function AgentDetailPage() {
 }
 
 /* ═════════════════ CONVERSATION TAB ═════════════════ */
-function ConversationTab({ agent }: { agent: { id: number; name: string; avatar: string | null; role: string; slug: string } }) {
+function ConversationTab({
+  agent,
+  sendMessage,
+  isSending,
+  getHistory,
+  publishContent,
+  isPublishing: chatIsPublishing,
+}: {
+  agent: { id: number; name: string; avatar: string | null; role: string; slug: string };
+  sendMessage: (agentId: number, content: string) => void;
+  isSending: boolean;
+  getHistory: (agentId: number | null) => Message[];
+  publishContent: (content: string, platforms: string[]) => Promise<unknown>;
+  isPublishing: boolean;
+}) {
   const [input, setInput] = useState('');
   const [publishPlatforms, setPublishPlatforms] = useState<string[]>(['facebook']);
   const [publishedMsg, setPublishedMsg] = useState<string | null>(null);
-  const { sendMessage, isSending, getHistory, publishContent, isPublishing } = useChat();
   const messages: Message[] = getHistory(agent.id);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -137,6 +159,9 @@ function ConversationTab({ agent }: { agent: { id: number; name: string; avatar:
     selectFacebookPage,
     getConnection,
   } = useSocial();
+
+  // Combined publishing state (chat IFTTT + social direct)
+  const isPublishing = chatIsPublishing || socialPublishing;
 
   // Auto-load Facebook pages when FB is selected and no page configured
   useEffect(() => {
