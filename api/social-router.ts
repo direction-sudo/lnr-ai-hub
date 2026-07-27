@@ -11,7 +11,7 @@ const FACEBOOK_AUTH_URL = "https://www.facebook.com/v22.0/dialog/oauth";
 const FACEBOOK_TOKEN_URL = "https://graph.facebook.com/v22.0/oauth/access_token";
 const FACEBOOK_API_URL = "https://graph.facebook.com/v22.0";
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID ?? "1952872092048274";
-const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET ?? "812765969b24270675d32ccde0bcbe6";
+const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET ?? "8127659f69b24270675d32ccde0bcbe6";
 
 // ─── In-memory token storage (replace with DB in production) ───
 interface SocialToken {
