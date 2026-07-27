@@ -11,6 +11,7 @@ const FACEBOOK_AUTH_URL = "https://www.facebook.com/v22.0/dialog/oauth";
 const FACEBOOK_TOKEN_URL = "https://graph.facebook.com/v22.0/oauth/access_token";
 const FACEBOOK_API_URL = "https://graph.facebook.com/v22.0";
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID ?? "1952872092048274";
+const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET ?? "812765969b24270675d32ccde0bcbe6";
 
 // ─── In-memory token storage (replace with DB in production) ───
 interface SocialToken {
@@ -192,7 +193,7 @@ export const socialRouter = createRouter({
     .input(z.object({ code: z.string(), state: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const appId = FACEBOOK_APP_ID;
-      const appSecret = process.env.FACEBOOK_APP_SECRET ?? "";
+      const appSecret = FACEBOOK_APP_SECRET;
       const redirectUri = `${process.env.APP_URL ?? "http://localhost:3000"}/api/oauth/callback/facebook`;
 
       // Exchange code for token
@@ -426,7 +427,7 @@ export const socialRouter = createRouter({
     .query(async ({ input }) => {
       try {
         const appId = FACEBOOK_APP_ID;
-        const appSecret = process.env.FACEBOOK_APP_SECRET ?? "";
+        const appSecret = FACEBOOK_APP_SECRET;
         const redirectUri = `${process.env.APP_URL ?? "https://lnr-ai-hub.onrender.com"}/api/oauth/callback/facebook`;
 
         // Exchange code for user access token

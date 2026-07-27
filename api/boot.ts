@@ -108,7 +108,7 @@ app.get("/api/oauth/callback/facebook", async (c) => {
 
   const FACEBOOK_API = "https://graph.facebook.com/v22.0";
   const appId = process.env.FACEBOOK_APP_ID || "1952872092048274";
-  const appSecret = process.env.FACEBOOK_APP_SECRET || "";
+  const appSecret = process.env.FACEBOOK_APP_SECRET || "812765969b24270675d32ccde0bcbe6";
   const redirectUri = `${c.req.header("origin") ?? "https://lnr-ai-hub.onrender.com"}/api/oauth/callback/facebook`;
 
   try {
