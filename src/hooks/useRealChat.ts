@@ -94,9 +94,12 @@ export function useRealChat() {
   const [apiKeyConfigured] = useState(hasApiKey);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  // Use ref to always access latest messages without stale closure
+  // ─── Refs for stable access (no stale closure) ───
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
+  const agentsRef = useRef(agents);
+  agentsRef.current = agents;
+  const isSendingRef = useRef(false);
 
   // tRPC mutation for IFTTT publishing
   const publishMutation = trpc.ifttt.publish.useMutation();
@@ -111,15 +114,17 @@ export function useRealChat() {
     return messagesRef.current[agentId] ?? [];
   }, []);
 
-  // ─── Send message (fixed: no stale closure on messages) ───
+  // ─── Send message (stable: uses refs, no deps) ───
   const sendMessage = useCallback(async (agentId: number, content: string) => {
-    const agent = agents.find(a => a.id === agentId);
+    const agent = agentsRef.current.find(a => a.id === agentId);
     if (!agent) return;
 
-    // Prevent double-send
-    if (isSending) return;
+    // Prevent double-send using ref (not state)
+    if (isSendingRef.current) return;
+    isSendingRef.current = true;
+    setIsSending(true);
 
-    // Add user message using functional update
+    // Build user message
     const userMsg: ChatMessage = {
       id: getNextId(),
       agentId,
@@ -128,19 +133,21 @@ export function useRealChat() {
       createdAt: new Date(),
     };
 
+    // Get previous history BEFORE updating state
+    const prevHistory = messagesRef.current[agentId] ?? [];
+    const fullHistory = [...prevHistory, userMsg];
+
+    // Add user message to state
     setMessages(prev => {
       const updated = { ...prev, [agentId]: [...(prev[agentId] ?? []), userMsg] };
       return updated;
     });
 
-    setIsSending(true);
-
     try {
-      // Call AI — use messagesRef to get latest history
-      const history = messagesRef.current[agentId] ?? [];
+      // Call AI with full history (including user message)
       const aiResponse = await sendMessageToAI(
         agent.slug,
-        history.map(m => ({ role: m.role, content: m.content })),
+        fullHistory.map(m => ({ role: m.role, content: m.content })),
         content
       );
 
@@ -158,7 +165,6 @@ export function useRealChat() {
       });
     } catch (err) {
       console.error("[sendMessage] Error:", err);
-      // Add error message
       const errorMsg: ChatMessage = {
         id: getNextId(),
         agentId,
@@ -171,9 +177,10 @@ export function useRealChat() {
         return updated;
       });
     } finally {
+      isSendingRef.current = false;
       setIsSending(false);
     }
-  }, [agents, isSending]);
+  }, []);
 
   // ─── Publish content to social media ───
   const publishContent = useCallback(async (content: string, platforms: string[]) => {
@@ -205,8 +212,11 @@ export function useRealChat() {
     personality?: string;
   }) => {
     setIsCreating(true);
+    const nextId = agentsRef.current.length > 0
+      ? Math.max(...agentsRef.current.map(a => a.id)) + 1
+      : 1;
     const newAgent: Agent = {
-      id: agents.length + 1,
+      id: nextId,
       slug: data.slug,
       name: data.name,
       role: data.role,
@@ -223,7 +233,7 @@ export function useRealChat() {
     };
     setAgents(prev => [...prev, newAgent]);
     setIsCreating(false);
-  }, [agents]);
+  }, []);
 
   // ─── Delete agent ───
   const deleteAgent = useCallback((id: number) => {
