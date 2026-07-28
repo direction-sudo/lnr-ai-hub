@@ -417,7 +417,7 @@ export const socialRouter = createRouter({
       url.searchParams.set("client_id", appId);
       url.searchParams.set("redirect_uri", redirectUri);
       url.searchParams.set("state", state);
-      url.searchParams.set("scope", "pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish");
+      url.searchParams.set("scope", "pages_manage_posts,pages_read_engagement,business_management,instagram_basic,instagram_content_publish");
       url.searchParams.set("response_type", "code");
 
       return { url: url.toString(), state };
