@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import {
   Users, Instagram, MessageSquare, Calendar, FileText,
   Check, X, ChevronLeft, Plus, AlertCircle, Key,
-  Send, Trash2, ExternalLink
+  Send, Trash2, ExternalLink, Save
 } from 'lucide-react';
 import { useSocial } from '@/hooks/useSocial';
 import ConnectLinkedInModal from '@/components/ConnectLinkedInModal';
@@ -76,6 +76,7 @@ export default function IntegrationsPage() {
     isConnected,
     disconnect,
     manualConnect,
+    configurePageToken,
     publishPost,
     isPublishing,
   } = useSocial();
@@ -86,6 +87,10 @@ export default function IntegrationsPage() {
   const [publishModal, setPublishModal] = useState<{ platform: string; name: string } | null>(null);
   const [postContent, setPostContent] = useState('');
   const [publishSuccess, setPublishSuccess] = useState(false);
+
+  // LNR Finance direct page token config
+  const [lnrPageToken, setLnrPageToken] = useState('');
+  const [lnrConfigured, setLnrConfigured] = useState(false);
 
   const connected = connections.filter((i) => i.connected);
   const disconnected = INTEGRATIONS.filter(
@@ -100,6 +105,13 @@ export default function IntegrationsPage() {
     manualConnect('facebook', token, pageName, pageId);
     // Instagram uses the same connection as Facebook
     manualConnect('instagram', token, pageName, pageId);
+  };
+
+  const handleConfigureLnr = () => {
+    if (!lnrPageToken.trim()) return;
+    configurePageToken('facebook', lnrPageToken.trim(), '404269686112139', 'LNR Finance');
+    setLnrConfigured(true);
+    setTimeout(() => setLnrConfigured(false), 3000);
   };
 
   const handlePublish = async () => {
@@ -402,6 +414,42 @@ export default function IntegrationsPage() {
               </svg>
               🔍 Trouver automatiquement mon Page ID Facebook
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* LNR Finance Direct Configuration */}
+      <div className="glass-card p-5 mt-6 border-[rgba(212,168,83,0.2)]">
+        <div className="flex items-start gap-3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-[#D4A853] mt-0.5 flex-shrink-0">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-[#FAFAFA] mb-1">⚡ Configurer LNR Finance (Page Token)</p>
+            <p className="text-xs text-[#52525B] leading-relaxed mb-3">
+              Collez le <strong>Page Token</strong> de LNR Finance obtenu depuis la page de connexion Facebook pour publier directement sur la page.
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={lnrPageToken}
+                onChange={(e) => setLnrPageToken(e.target.value)}
+                placeholder="Collez le Page Token de LNR Finance..."
+                className="flex-1 bg-[#18181B] border border-white/[0.06] rounded-xl px-4 py-2.5 text-xs text-[#FAFAFA] placeholder-[#3F3F46] focus:outline-none focus:border-[#D4A853]/40 transition-all font-mono"
+              />
+              <button
+                onClick={handleConfigureLnr}
+                disabled={!lnrPageToken.trim()}
+                className="btn-gold px-4 py-2.5 rounded-xl text-xs font-semibold disabled:opacity-40 flex items-center gap-2"
+              >
+                <span className="relative z-10 flex items-center gap-1.5">
+                  {lnrConfigured ? <><Check size={13} /> Configuré !</> : <><Save size={13} /> Configurer</>}
+                </span>
+              </button>
+            </div>
+            <p className="text-[10px] text-[#3F3F46] mt-2">
+              Page ID: 404269686112139 · LNR Finance
+            </p>
           </div>
         </div>
       </div>

@@ -139,6 +139,20 @@ export function useSocial() {
     }
   }, []);
 
+  // ─── Configure page token directly (for LNR Finance, etc.) ───
+  const configurePageToken = useCallback((platform: 'facebook' | 'instagram', pageToken: string, pageId: string, pageName: string) => {
+    setConnections(prev => {
+      const filtered = prev.filter(c => c.platform !== platform);
+      return [...filtered, {
+        platform,
+        connected: true,
+        accessToken: pageToken, // Page Token used directly
+        pageId,
+        pageName,
+      }];
+    });
+  }, []);
+
   // ─── Disconnect ───
   const disconnect = useCallback((platform: string) => {
     setConnections(prev => prev.filter(c => c.platform !== platform));
@@ -209,5 +223,6 @@ export function useSocial() {
     isLoadingPages,
     loadFacebookPages,
     selectFacebookPage,
+    configurePageToken,
   };
 }
