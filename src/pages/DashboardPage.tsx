@@ -55,7 +55,7 @@ function Sidebar({ mobileOpen, onClose, onOpenApiKey }: { mobileOpen: boolean; o
       >
         <div className="p-4">
           <Link to="/" className="flex items-center mb-5 group">
-            <img src="./images/lnr-ai-hub-logo.png" alt="LNR AI HUB" className="h-9 w-auto transition-all group-hover:drop-shadow-[0_0_8px_rgba(212,168,83,0.4)]" />
+            <img src="/images/lnr-ai-hub-logo.png" alt="LNR AI HUB" className="h-9 w-auto transition-all group-hover:drop-shadow-[0_0_8px_rgba(212,168,83,0.4)]" />
           </Link>
 
           <button
@@ -495,7 +495,7 @@ export default function DashboardPage() {
         <div className="lg:hidden h-14 flex items-center px-4 border-b border-white/[0.04]"
           style={{ background: 'rgba(13,13,15,0.95)', backdropFilter: 'blur(20px)' }}>
           <button onClick={() => setMobileOpen(true)} className="w-10 h-10 flex items-center justify-center text-[#52525B]"><Menu size={20} /></button>
-          <img src="./images/lnr-ai-hub-logo.png" alt="LNR AI HUB" className="h-7 w-auto ml-3" />
+          <img src="/images/lnr-ai-hub-logo.png" alt="LNR AI HUB" className="h-7 w-auto ml-3" />
         </div>
 
         <main className={isAgent ? 'fixed inset-0 lg:relative lg:inset-auto z-30 bg-[#0A0A0B]' : ''}>

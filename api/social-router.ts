@@ -346,34 +346,51 @@ export const socialRouter = createRouter({
       let tokenToUse = input.pageToken;
       let pageName = input.pageId;
 
-      // If no pageToken provided, try to get one from user token
+      // If no pageToken provided, try accessToken as page token first
+      // (this works when user configured a Page Token directly)
       if (!tokenToUse) {
-        const accountsRes = await fetch(
-          `${FACEBOOK_API_URL}/me/accounts?access_token=${input.accessToken}`
+        // Try 1: Use accessToken directly as a Page Token
+        console.log(`[Facebook V2] Trying accessToken as Page Token directly...`);
+        const testRes = await fetch(
+          `${FACEBOOK_API_URL}/${input.pageId}?fields=name&access_token=${input.accessToken}`
         );
+        const testData = await testRes.json() as { name?: string; error?: { message: string } };
 
-        if (!accountsRes.ok) {
-          const err = await accountsRes.text();
-          console.error("[Facebook V2] /me/accounts error:", err);
-          throw new Error("Impossible d'obtenir les pages. Vérifiez votre token.");
-        }
-
-        const accountsData = (await accountsRes.json()) as {
-          data: { id: string; name: string; access_token: string }[];
-        };
-
-        const page = accountsData.data.find((p) => p.id === input.pageId);
-        if (!page) {
-          throw new Error(
-            `Page ${input.pageId} non trouvée. Pages disponibles: ${accountsData.data.map((p) => p.name).join(", ")}`
+        if (testRes.ok && testData.name) {
+          // accessToken works as Page Token!
+          tokenToUse = input.accessToken;
+          pageName = testData.name;
+          console.log(`[Facebook V2] accessToken works as Page Token for "${testData.name}"`);
+        } else {
+          // Try 2: accessToken is a User Token, get page token via /me/accounts
+          console.log(`[Facebook V2] accessToken is User Token, fetching page token via /me/accounts...`);
+          const accountsRes = await fetch(
+            `${FACEBOOK_API_URL}/me/accounts?access_token=${input.accessToken}`
           );
-        }
 
-        tokenToUse = page.access_token;
-        pageName = page.name;
-        console.log(`[Facebook V2] Using page token for "${page.name}"`);
+          if (!accountsRes.ok) {
+            const err = await accountsRes.text();
+            console.error("[Facebook V2] /me/accounts error:", err);
+            throw new Error("Impossible d'obtenir les pages. Vérifiez votre token.");
+          }
+
+          const accountsData = (await accountsRes.json()) as {
+            data: { id: string; name: string; access_token: string }[];
+          };
+
+          const page = accountsData.data.find((p) => p.id === input.pageId);
+          if (!page) {
+            throw new Error(
+              `Page ${input.pageId} non trouvée. Pages disponibles: ${accountsData.data.map((p) => p.name).join(", ")}`
+            );
+          }
+
+          tokenToUse = page.access_token;
+          pageName = page.name;
+          console.log(`[Facebook V2] Using page token for "${page.name}"`);
+        }
       } else {
-        // Get page name with page token
+        // pageToken provided directly
         const infoRes = await fetch(
           `${FACEBOOK_API_URL}/${input.pageId}?fields=name&access_token=${tokenToUse}`
         );
