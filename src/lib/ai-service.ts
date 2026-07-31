@@ -163,23 +163,15 @@ function getSimulatedResponse(agentSlug: string, message: string): string {
   if (agentSlug === 'nora') {
     // Keyword-based responses
     if (lowerMsg.includes('courage') || lowerMsg.includes('motivation') || lowerMsg.includes('inspir')) {
-      return `Voici un post sur le courage, prêt à publier :
-
-📝 **Post LinkedIn** :
-"Le courage ne consiste pas à avoir peur. Le courage, c'est avancer malgré la peur.
+      return `Le courage ne consiste pas à avoir peur. Le courage, c'est avancer malgré la peur.
 
 Chez LNR Finance, on rencontre chaque jour des défis qui nous poussent hors de notre zone de confort. C'est précisément là que la magie opère.
 
-💡 Ce que le courage vous apporte :
-• La capacité de prendre des décisions difficiles
-• La résilience face aux obstacles
-• L'innovation qui naît du risque calculé
+La capacité de prendre des décisions difficiles, la résilience face aux obstacles, l'innovation qui naît du risque calculé — voilà ce que le courage vous apporte au quotidien.
 
-Quel est le dernier acte courageux que vous avez posé dans votre carrière ? Partagez en commentaires 👇"
+Quel est le dernier acte courageux que vous avez posé dans votre carrière ? Partagez en commentaires 👇
 
-📊 **Hashtags** : #Courage #Leadership #Motivation #LNRFinance #Mindset
-
-Voulez-vous une version plus courte pour Instagram ou une version storytelling ?`;
+#Courage #Leadership #Motivation #LNRFinance #Mindset`;
     }
 
     if (lowerMsg.includes('calendrier') || lowerMsg.includes('planning') || lowerMsg.includes('editorial')) {
@@ -209,18 +201,13 @@ Voulez-vous que je rédige chaque post en détail ?`;
     }
 
     if (lowerMsg.includes('post') && (lowerMsg.includes('linkedin') || lowerMsg.includes('réseau'))) {
-      return `Voici 3 posts LinkedIn prêts à publier pour LNR Finance :
+      return `Nous sommes fiers d'accompagner plus de 500 familles dans leur gestion de patrimoine. Chaque chiffre cache une histoire, chaque client est une relation de confiance.
 
-🚀 **Post 1 — Corporate**
-"Nous sommes fiers d'accompagner plus de 500 familles dans leur gestion de patrimoine. Chaque chiffre cache une histoire, chaque client est une relation de confiance."
+Depuis 10 ans, LNR Finance met l'humain au coeur de la finance. Parce que votre patrimoine n'est pas qu'une question de chiffres, c'est votre avenir.
 
-✨ **Post 2 — Storytelling**
-"Il y a 3 ans, Marie nous a confié son avenir financier avec un peu d'appréhension. Aujourd'hui, elle vient de signer l'achat de sa résidence secondaire. Voilà pourquoi on se lève le matin."
+Prêt à écrire la prochaine page de votre histoire ? Contactez-nous pour un premier rendez-vous sans engagement.
 
-💥 **Post 3 — Chiffre d'impact**
-"35% : c'est le gain moyen de performance que nos clients ont réalisé en 2025. Et si 2026 était votre année ?"
-
-Quel ton préférez-vous ?`;
+#LNRFinance #GestionDePatrimoine #Confiance #Excellence #Finance`;
     }
 
     if (lowerMsg.includes('idee') || lowerMsg.includes('idée') || lowerMsg.includes('suggestion')) {
@@ -258,46 +245,31 @@ Quel est votre besoin du jour ?`;
 
     // Generic Nora responses (randomized, anti-repetition)
     const genericNora = [
-      `Je vais créer du contenu sur "${message}" ! Voici 3 approches :
+      `Chez LNR Finance, ${message} fait partie de notre expertise au quotidien.
 
-🎯 **Approche 1 — Éducatif**
-"Tout ce que vous devez savoir sur ${message}. Thread 🧵"
+Depuis plus de 10 ans, nous accompagnons nos clients avec la même exigence : l'excellence personnalisée. Un conseiller dédié, une stratégie sur mesure, des résultats mesurables.
 
-🎯 **Approche 2 — Storytelling**
-"Je me souviens quand on a découvert ${message} chez LNR. Ça a tout changé..."
+Vous souhaitez en savoir plus ? Contactez-nous pour un premier rendez-vous sans engagement.
 
-🎯 **Approche 3 — Direct**
-"${message} ? Voici notre méthode éprouvée en 5 étapes 👇"
+#LNRFinance #GestionDePatrimoine #Excellence #Conseil`,
 
-Quelle approche vous parle le plus ?`,
+      `${message} — un sujet qui nous tient particulièrement à coeur chez LNR Finance.
 
-      `Excellent sujet ! Pour "${message}", je propose cette stratégie :
+Parce que chaque parcours est unique, nous mettons notre expertise au service de vos ambitions. Patrimoine, immobilier, fiscalité : nous construisons votre stratégie sur mesure.
 
-📋 **Plan de contenu** :
-1. **Post principal** (LinkedIn) : Le sujet en profondeur
-2. **Carousel** (Instagram) : 5 slides récapitulatives
-3. **Story** : Sondage + CTA vers le post
-4. **Reel** : Version courte et dynamique
+Découvrez comment nous pouvons vous accompagner. Le premier rendez-vous est sans engagement.
 
-🎨 **Visuel suggéré** : Design noir/doré avec typographie élégante
+#LNRFinance #Patrimoine #SurMesure #ConseilFinance`,
 
-Voulez-vous que je rédige le post principal ?`,
+      `"La meilleure décision que j'ai prise ? Contacter LNR Finance pour ma gestion de patrimoine."
 
-      `Pour "${message}", voici un post prêt à publier :
+Cette phrase, nous l'entendons chaque jour de la part de nos clients. Et si ${message} était le début de votre nouvelle histoire ?
 
-📝 **Version LinkedIn** :
-"Chez LNR Finance, ${message} fait partie de notre ADN. Depuis 10 ans, nous accompagnons nos clients avec la même exigence : l'excellence personnalisée.
+Notre promesse : un accompagnement humain, transparent et performant.
 
-💡 Notre différence ?
-→ Un conseiller dédié
-→ Une stratégie sur mesure
-→ Des résultats mesurables
+Prenez rendez-vous dès maintenant 👇
 
-Prêt à franchir le prochain cap ? Contactez-nous."
-
-📊 **Hashtags** : #LNRFinance #GestionDePatrimoine #Excellence
-
-Voulez-vous une version plus courte pour Instagram ?`,
+#LNRFinance #TémoignageClient #GestionDePatrimoine`,
     ];
     const idx = pickRandomIndex(genericNora.length, lastNoraIndex);
     lastNoraIndex = idx;
