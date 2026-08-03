@@ -437,3 +437,4 @@ Temps estimé : 4-6 semaines. On commence par quelle étape ?`,
   // Fallback
   return `C'est noté ! Je travaille sur "${message}" et je reviens vers vous avec une solution complète. Souhaitez-vous des précisions sur un point particulier ?`;
 }
+// FORCE REBUILD 1785750108
