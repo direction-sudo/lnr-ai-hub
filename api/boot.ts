@@ -372,6 +372,28 @@ app.get("/api/oauth/callback/linkedin", async (c) => {
   }
 });
 
+// ─── WhatsApp webhook ───
+app.get("/api/webhooks/whatsapp", async (c) => {
+  const mode = c.req.query("hub.mode");
+  const token = c.req.query("hub.verify_token");
+  const challenge = c.req.query("hub.challenge");
+
+  const VERIFY_TOKEN = "lnr_whatsapp_verify_2026";
+
+  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    console.log("[WhatsApp] Webhook verified successfully");
+    return new Response(challenge ?? "OK", { status: 200 });
+  }
+
+  return c.json({ error: "Verification failed" }, 403);
+});
+
+app.post("/api/webhooks/whatsapp", async (c) => {
+  const body = await c.req.json();
+  console.log("[WhatsApp] Incoming webhook:", JSON.stringify(body, null, 2));
+  return c.json({ status: "received" });
+});
+
 // ─── 6. Catch-all ───
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
