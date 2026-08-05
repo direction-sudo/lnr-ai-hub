@@ -274,6 +274,104 @@ app.use("/api/trpc/*", async (c) => {
   });
 });
 
+// ─── LinkedIn callback ───
+app.get("/api/oauth/callback/linkedin", async (c) => {
+  const code = c.req.query("code");
+  const error = c.req.query("error");
+  const errorDescription = c.req.query("error_description");
+
+  if (error) {
+    return c.html(`<html><body style="font-family:sans-serif;text-align:center;padding:50px;background:#0a0a0b;color:#fafafa;">
+      <h2 style="color:#e74c3c;">Erreur LinkedIn</h2>
+      <p>${errorDescription || error}</p>
+      <a href="/dashboard/integrations" style="color:#D4A853;">Retour aux Intégrations</a>
+    </body></html>`);
+  }
+  if (!code) {
+    return c.html(`<html><body style="font-family:sans-serif;text-align:center;padding:50px;background:#0a0a0b;color:#fafafa;">
+      <h2 style="color:#e74c3c;">Paramètres manquants</h2>
+      <a href="/dashboard/integrations" style="color:#D4A853;">Retour aux Intégrations</a>
+    </body></html>`);
+  }
+
+  const LINKEDIN_API = "https://api.linkedin.com/v2";
+  const LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken";
+  const clientId = process.env.LINKEDIN_CLIENT_ID ?? "";
+  const clientSecret = process.env.LINKEDIN_CLIENT_SECRET ?? "";
+  const redirectUri = "https://lnr-ai-hub.onrender.com/api/oauth/callback/linkedin";
+
+  try {
+    // Exchange code for token
+    const tokenRes = await fetch(LINKEDIN_TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: redirectUri,
+        client_id: clientId,
+        client_secret: clientSecret,
+      }),
+    });
+
+    const tokenText = await tokenRes.text();
+    let tokenData: { access_token?: string; error?: string; error_description?: string };
+    try { tokenData = JSON.parse(tokenText); } catch { throw new Error("Invalid response from LinkedIn"); }
+
+    if (tokenData.error || !tokenData.access_token) {
+      throw new Error(tokenData.error_description || tokenData.error || "Token exchange failed");
+    }
+
+    const accessToken = tokenData.access_token;
+
+    // Get user profile
+    const profileRes = await fetch(`${LINKEDIN_API}/userinfo`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const profile = await profileRes.json() as { name?: string; sub?: string; email?: string };
+
+    return c.html(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>LinkedIn Connect - LNR AI Hub</title></head>
+<body style="font-family:sans-serif;background:#0a0a0b;color:#fafafa;padding:30px;max-width:600px;margin:0 auto;">
+  <div style="text-align:center;margin-bottom:30px;">
+    <h2 style="color:#0077B5;margin-bottom:8px;">✅ Connexion LinkedIn réussie !</h2>
+    <p style="color:#a1a1aa;font-size:13px;">Copiez votre token et configurez-le dans l'app LNR AI Hub.</p>
+  </div>
+
+  <div style="background:#18181b;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:20px;">
+    <label style="color:#a1a1aa;font-size:10px;">Profil :</label>
+    <p style="color:#fafafa;font-size:14px;margin:4px 0 12px;">${profile.name || "LinkedIn User"}</p>
+    <label style="color:#a1a1aa;font-size:10px;">Access Token :</label>
+    <div style="display:flex;gap:6px;margin:4px 0;">
+      <input readonly value="${accessToken}" style="flex:1;background:#0d0d0f;border:1px solid rgba(255,255,255,0.06);color:#0077B5;padding:6px 10px;border-radius:6px;font-size:10px;font-family:monospace;" />
+      <button onclick="copy(this)" data-text="${accessToken}" style="background:#0077B5;color:#fff;border:none;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">Copier</button>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:30px;">
+    <a href="/dashboard/integrations" style="display:inline-block;background:#0077B5;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;">Retour aux Intégrations</a>
+  </div>
+
+  <script>
+    function copy(btn) {
+      const text = btn.getAttribute('data-text');
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = '✅ Copié !';
+        setTimeout(() => btn.textContent = 'Copier', 2000);
+      });
+    }
+  </script>
+</body></html>`);
+
+  } catch (err: any) {
+    return c.html(`<html><body style="font-family:sans-serif;text-align:center;padding:50px;background:#0a0a0b;color:#fafafa;">
+      <h2 style="color:#e74c3c;">Erreur LinkedIn</h2>
+      <p style="color:#a1a1aa;">${err.message}</p>
+      <a href="/dashboard/integrations" style="color:#D4A853;text-decoration:none;">Retour aux Intégrations</a>
+    </body></html>`);
+  }
+});
+
 // ─── 6. Catch-all ───
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 

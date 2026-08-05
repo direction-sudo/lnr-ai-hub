@@ -5,6 +5,8 @@ import { createRouter, publicQuery, authedQuery } from "./middleware";
 const LINKEDIN_AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization";
 const LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken";
 const LINKEDIN_API_URL = "https://api.linkedin.com/v2";
+const LINKEDIN_CLIENT_ID = process.env.LINKEDIN_CLIENT_ID ?? "";
+const LINKEDIN_CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET ?? "";
 
 // ─── Facebook OAuth Config ───
 const FACEBOOK_AUTH_URL = "https://www.facebook.com/v22.0/dialog/oauth";
@@ -45,13 +47,12 @@ export const socialRouter = createRouter({
 
   // Get LinkedIn OAuth URL
   getLinkedInAuthUrl: authedQuery.query(({ ctx }) => {
-    const clientId = process.env.LINKEDIN_CLIENT_ID ?? "";
-    const redirectUri = `${process.env.APP_URL ?? "http://localhost:3000"}/api/oauth/callback/linkedin`;
+    const redirectUri = `${process.env.APP_URL ?? "https://lnr-ai-hub.onrender.com"}/api/oauth/callback/linkedin`;
     const state = Buffer.from(ctx.user.id.toString()).toString("base64");
 
     const url = new URL(LINKEDIN_AUTH_URL);
     url.searchParams.set("response_type", "code");
-    url.searchParams.set("client_id", clientId);
+    url.searchParams.set("client_id", LINKEDIN_CLIENT_ID);
     url.searchParams.set("redirect_uri", redirectUri);
     url.searchParams.set("state", state);
     url.searchParams.set(
@@ -66,9 +67,7 @@ export const socialRouter = createRouter({
   connectLinkedIn: authedQuery
     .input(z.object({ code: z.string(), state: z.string() }))
     .mutation(async ({ input, ctx }) => {
-      const clientId = process.env.LINKEDIN_CLIENT_ID ?? "";
-      const clientSecret = process.env.LINKEDIN_CLIENT_SECRET ?? "";
-      const redirectUri = `${process.env.APP_URL ?? "http://localhost:3000"}/api/oauth/callback/linkedin`;
+      const redirectUri = `${process.env.APP_URL ?? "https://lnr-ai-hub.onrender.com"}/api/oauth/callback/linkedin`;
 
       // Exchange code for token
       const tokenRes = await fetch(LINKEDIN_TOKEN_URL, {
@@ -78,8 +77,8 @@ export const socialRouter = createRouter({
           grant_type: "authorization_code",
           code: input.code,
           redirect_uri: redirectUri,
-          client_id: clientId,
-          client_secret: clientSecret,
+          client_id: LINKEDIN_CLIENT_ID,
+          client_secret: LINKEDIN_CLIENT_SECRET,
         }),
       });
 
@@ -603,6 +602,22 @@ export const socialRouter = createRouter({
   // ═══════════════════════════════════════════
   // V2 — LinkedIn (publicQuery, token direct)
   // ═══════════════════════════════════════════
+
+  getLinkedInConnectUrl: publicQuery
+    .input(z.object({ redirectUri: z.string().optional() }))
+    .query(({ input }) => {
+      const redirectUri = input.redirectUri ?? `${process.env.APP_URL ?? "https://lnr-ai-hub.onrender.com"}/api/oauth/callback/linkedin`;
+      const state = Buffer.from(Date.now().toString()).toString("base64");
+
+      const url = new URL(LINKEDIN_AUTH_URL);
+      url.searchParams.set("response_type", "code");
+      url.searchParams.set("client_id", LINKEDIN_CLIENT_ID);
+      url.searchParams.set("redirect_uri", redirectUri);
+      url.searchParams.set("state", state);
+      url.searchParams.set("scope", "openid profile w_member_social");
+
+      return { url: url.toString(), state };
+    }),
 
   publishLinkedInPostV2: publicQuery
     .input(z.object({
