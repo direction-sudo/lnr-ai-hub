@@ -382,10 +382,14 @@ app.get("/api/webhooks/whatsapp", async (c) => {
 
   if (mode === "subscribe" && token === VERIFY_TOKEN) {
     console.log("[WhatsApp] Webhook verified successfully");
-    return new Response(challenge ?? "OK", { status: 200 });
+    // Meta expects raw text response, not JSON
+    return new Response(challenge ?? "OK", {
+      status: 200,
+      headers: { "Content-Type": "text/plain" },
+    });
   }
 
-  return c.json({ error: "Verification failed" }, 403);
+  return new Response("Verification failed", { status: 403 });
 });
 
 app.post("/api/webhooks/whatsapp", async (c) => {
