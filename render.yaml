@@ -1,5 +1,4 @@
 services:
-  # Service principal LNR AI Hub (Node.js + Docker)
   - type: web
     name: lnr-ai-hub-backend
     runtime: docker
@@ -20,16 +19,3 @@ services:
       name: lnr-data
       mountPath: /app/data
       sizeGB: 1
-
-  # Service webhook FIDES (Python Flask)
-  - type: web
-    name: fides-webhook
-    runtime: python
-    plan: free
-    rootDir: ./webhook
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn -b 0.0.0.0:$PORT app:app
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
-    healthCheckPath: /api/health
