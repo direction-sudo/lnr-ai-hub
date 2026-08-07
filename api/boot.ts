@@ -9,6 +9,8 @@ import { createContext } from "./context";
 import { env } from "./lib/env";
 import { createOAuthCallbackHandler } from "./kimi/auth";
 import { Paths } from "@contracts/constants";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
 const app = new Hono<{ Bindings: HttpBindings }>();
 
@@ -363,6 +365,22 @@ app.get("/fides-dashboard", (c) => {
   return c.html(html);
 });
 
+// ─── Console de pilotage agents IA ───
+app.get("/console-agents", (c) => {
+  const paths = [
+    resolve(process.cwd(), "public/console-agents.html"),
+    resolve(process.cwd(), "dist/console-agents.html"),
+    resolve(__dirname, "../public/console-agents.html"),
+    resolve(__dirname, "../../public/console-agents.html"),
+  ];
+  let html = "";
+  for (const p of paths) {
+    try { html = readFileSync(p, "utf-8"); break; } catch {}
+  }
+  if (!html) return c.text("Console de pilotage non disponible", 500);
+  return c.html(html);
+});
+
 // ─── Health check ───
 app.get("/api/health", (c) => c.json({ ok: true, ts: Date.now(), fides_leads: leadsStorage.length }));
 
@@ -404,4 +422,5 @@ serve({ fetch: app.fetch, port, hostname: "0.0.0.0" }, () => {
   console.log(`[LNR AI Hub] Server running on http://0.0.0.0:${port}/`);
   console.log(`[FIDES] Webhook endpoint: http://0.0.0.0:${port}/api/webhooks/pipedrive`);
   console.log(`[FIDES] Dashboard: http://0.0.0.0:${port}/fides-dashboard`);
+  console.log(`[FIDES] Console agents: http://0.0.0.0:${port}/console-agents`);
 });
