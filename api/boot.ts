@@ -369,9 +369,11 @@ app.get("/fides-dashboard", (c) => {
 app.get("/console-agents", (c) => {
   const paths = [
     resolve(process.cwd(), "public/console-agents.html"),
+    resolve(process.cwd(), "dist/public/console-agents.html"),
     resolve(process.cwd(), "dist/console-agents.html"),
     resolve(__dirname, "../public/console-agents.html"),
     resolve(__dirname, "../../public/console-agents.html"),
+    resolve(__dirname, "../../../public/console-agents.html"),
   ];
   let html = "";
   for (const p of paths) {
