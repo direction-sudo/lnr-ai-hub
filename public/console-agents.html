@@ -1,1 +1,428 @@
-<!DOCTYPE html><html lang='fr' class='dark' data-theme='dark' ><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>Console de Pilotage — Agents IA FIDES</title><script src='https://cdn.tailwindcss.com'></script><link href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css' rel='stylesheet' /><link href='https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap' rel='stylesheet'><script>tailwind.config={theme:{extend:{fontFamily:{sans:['Plus Jakarta Sans','system-ui'],mono:['JetBrains Mono','monospace']},colors:{slate:{950:'#020617',900:'#0b0f19',850:'#0f141f',800:'#151b2b',750:'#1a2235',700:'#1e293b'},accent:{blue:'#3b82f6',emerald:'#10b981',amber:'#f59e0b',rose:'#f43f5e',violet:'#8b5cf6',cyan:'#06b6d4'}}}}}</script><style>:root{--bg:#0b0f19;--panel:#151b2b;--border:#1e293b;--text:#f1f5f9;--muted:#94a3b8}*{box-sizing:border-box}body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);margin:0;min-height:100vh;overflow-x:hidden}h1,h2,h3{margin:0;font-weight:700}.grid{display:grid}.flex{display:flex}.hidden{display:none}.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}.status-online{background:#10b981;box-shadow:0 0 8px rgba(16,185,129,0.4)}.status-offline{background:#64748b}.status-busy{background:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,0.4)}.agent-card{transition:all 0.2s ease}.agent-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.3)}.metric-value{font-family:'JetBrains Mono',monospace}.pulse{animation:pulse-glow 2s infinite}@keyframes pulse-glow{0%,100%{box-shadow:0 0 5px rgba(16,185,129,0.3)}50%{box-shadow:0 0 20px rgba(16,185,129,0.6)}}.slide-in{animation:slideIn 0.3s ease}@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}@media(max-width:768px){.sidebar{position:fixed;z-index:50;transform:translateX(-100%);transition:transform 0.3s}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0!important}}</style></head><body><div class='flex min-h-screen' id='app'><aside class='sidebar w-64 bg-slate-900 border-r border-slate-800 fixed h-full z-40'><div class='p-6 border-b border-slate-800'><div class='flex items-center gap-3'><div class='w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center'><i class='fa-solid fa-shield-halved text-blue-400 text-lg'></i></div><div><h1 class='text-lg font-bold text-white'>FIDES</h1><p class='text-xs text-slate-400'>Console IA</p></div></div></div><nav class='p-4 space-y-1'><a href='#dashboard' class='nav-item flex items-center gap-3 px-4 py-3 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20'><i class='fa-solid fa-grid-2'></i><span class='text-sm font-medium'>Dashboard</span></a><a href='#agents' class='nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors'><i class='fa-solid fa-robot'></i><span class='text-sm font-medium'>Agents</span><span class='ml-auto text-xs bg-slate-800 px-2 py-0.5 rounded-full'>9</span></a><a href='#supervision' class='nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors'><i class='fa-solid fa-eye'></i><span class='text-sm font-medium'>Supervision</span></a><a href='#actions' class='nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors'><i class='fa-solid fa-list-check'></i><span class='text-sm font-medium'>Actions</span><span id='pending-actions-badge' class='ml-auto text-xs bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full hidden'>0</span></a><a href='#settings' class='nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors'><i class='fa-solid fa-gear'></i><span class='text-sm font-medium'>Paramètres</span></a></nav><div class='absolute bottom-0 left-0 right-0 p-4 border-t border-slate-800'><div class='flex items-center gap-3'><div class='w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold'>A</div><div class='flex-1 min-w-0'><p class='text-sm font-medium text-white truncate'>Amine</p><p class='text-xs text-slate-400'>Admin</p></div><div class='status-dot status-online'></div></div></div></aside><main class='main-content flex-1 ml-64 min-h-screen'><header class='sticky top-0 z-30 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800'><div class='flex items-center justify-between px-6 py-4'><div class='flex items-center gap-4'><button id='menu-toggle' class='lg:hidden p-2 rounded-lg bg-slate-800 text-slate-300'><i class='fa-solid fa-bars'></i></button><h2 class='text-xl font-bold text-white' id='page-title'>Dashboard</h2></div><div class='flex items-center gap-4'><div class='hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700'><div class='status-dot status-online pulse'></div><span class='text-xs font-medium text-emerald-400'>Système opérationnel</span></div><button class='relative p-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors' id='notif-btn'><i class='fa-solid fa-bell'></i><span id='notif-badge' class='absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white text-xs flex items-center justify-center hidden'>0</span></button></div></div></header><div class='p-6 space-y-6' id='content-area'><section id='dashboard-view'><div class='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6'><div class='bg-slate-800 rounded-xl p-5 border border-slate-700'><div class='flex items-center justify-between mb-3'><span class='text-sm text-slate-400'>Agents actifs</span><div class='w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center'><i class='fa-solid fa-robot text-emerald-400 text-sm'></i></div></div><p class='text-2xl font-bold text-white metric-value' id='metric-active'>0</p><p class='text-xs text-emerald-400 mt-1'><i class='fa-solid fa-arrow-up mr-1'></i><span id='metric-active-trend'>+0</span> ce mois</p></div><div class='bg-slate-800 rounded-xl p-5 border border-slate-700'><div class='flex items-center justify-between mb-3'><span class='text-sm text-slate-400'>Taux transfert humain</span><div class='w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center'><i class='fa-solid fa-user-headset text-amber-400 text-sm'></i></div></div><p class='text-2xl font-bold text-white metric-value' id='metric-transfer'>0%</p><p class='text-xs text-slate-400 mt-1'>Seuil alerte: >15%</p></div><div class='bg-slate-800 rounded-xl p-5 border border-slate-700'><div class='flex items-center justify-between mb-3'><span class='text-sm text-slate-400'>RDV pris (7j)</span><div class='w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center'><i class='fa-solid fa-calendar-check text-blue-400 text-sm'></i></div></div><p class='text-2xl font-bold text-white metric-value' id='metric-rdv'>0</p><p class='text-xs text-blue-400 mt-1'><i class='fa-solid fa-arrow-up mr-1'></i>+12% vs sem. dernière</p></div><div class='bg-slate-800 rounded-xl p-5 border border-slate-700'><div class='flex items-center justify-between mb-3'><span class='text-sm text-slate-400'>Actions en attente</span><div class='w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center'><i class='fa-solid fa-triangle-exclamation text-rose-400 text-sm'></i></div></div><p class='text-2xl font-bold text-white metric-value' id='metric-pending'>0</p><p class='text-xs text-rose-400 mt-1'><i class='fa-solid fa-circle-exclamation mr-1'></i>Nécessitent validation</p></div></div><div class='grid grid-cols-1 lg:grid-cols-3 gap-6'><div class='lg:col-span-2 bg-slate-800 rounded-xl border border-slate-700 p-5'><div class='flex items-center justify-between mb-4'><h3 class='text-base font-semibold text-white'>Activité des agents (24h)</h3><select class='bg-slate-900 border border-slate-700 rounded-lg px-3 py-1 text-xs text-slate-300'><option>Dernières 24h</option><option>7 jours</option><option>30 jours</option></select></div><div class='h-64 flex items-end justify-between gap-2 px-2' id='activity-chart'><div class='flex-1 bg-blue-500/20 rounded-t-lg relative group' style='height:45%'><div class='absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-xs px-2 py-1 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity'>45%</div></div><div class='flex-1 bg-blue-500/30 rounded-t-lg relative group' style='height:62%'><div class='absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-xs px-2 py-1 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity'>62%</div></div><div class='flex-1 bg-blue-500/40 rounded-t-lg relative group' style='height:38%'><div class='absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-xs px-2 py-1 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity'>38%</div></div><div class='flex-1 bg-blue-500/50 rounded-t-lg relative group' style='height:78%'><div class='absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-xs px-2 py-1 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity'>78%</div></div><div class='flex-1 bg-blue-500/60 rounded-t-lg relative group' style='height:55%'><div class='absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-xs px-2 py-1 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity'>55%</div></div><div class='flex-1 bg-blue-500/40 rounded-t-lg relative group' style='height:42%'><div class='absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-xs px-2 py-1 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity'>42%</div></div><div class='flex-1 bg-blue-500/30 rounded-t-lg relative group' style='height:67%'><div class='absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-xs px-2 py-1 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity'>67%</div></div><div class='flex-1 bg-emerald-500/50 rounded-t-lg relative group' style='height:85%'><div class='absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-xs px-2 py-1 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity'>85%</div></div></div><div class='flex justify-between mt-2 text-xs text-slate-500 px-2'><span>00h</span><span>03h</span><span>06h</span><span>09h</span><span>12h</span><span>15h</span><span>18h</span><span>21h</span></div></div><div class='bg-slate-800 rounded-xl border border-slate-700 p-5'><div class='flex items-center justify-between mb-4'><h3 class='text-base font-semibold text-white'>Alertes récentes</h3><button class='text-xs text-blue-400 hover:text-blue-300'>Tout voir</button></div><div class='space-y-3' id='alerts-container'><div class='alert-item flex items-start gap-3 p-3 rounded-lg bg-rose-500/5 border border-rose-500/10'><div class='w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center flex-shrink-0 mt-0.5'><i class='fa-solid fa-triangle-exclamation text-rose-400 text-xs'></i></div><div class='flex-1 min-w-0'><p class='text-sm font-medium text-white'>Taux de transfert élevé</p><p class='text-xs text-slate-400 mt-0.5'>Tom (VoIP) — 23% transferts humains</p><p class='text-xs text-slate-500 mt-1'>Il y a 12 min</p></div></div><div class='alert-item flex items-start gap-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/10'><div class='w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0 mt-0.5'><i class='fa-solid fa-clock text-amber-400 text-xs'></i></div><div class='flex-1 min-w-0'><p class='text-sm font-medium text-white'>Temps de réponse élevé</p><p class='text-xs text-slate-400 mt-0.5'>Julia (Conformité) — >5s</p><p class='text-xs text-slate-500 mt-1'>Il y a 45 min</p></div></div><div class='alert-item flex items-start gap-3 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10'><div class='w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-0.5'><i class='fa-solid fa-info text-blue-400 text-xs'></i></div><div class='flex-1 min-w-0'><p class='text-sm font-medium text-white'>Mise à jour disponible</p><p class='text-xs text-slate-400 mt-0.5'>Nouveau modèle IA pour Sam</p><p class='text-xs text-slate-500 mt-1'>Il y a 2h</p></div></div></div></div></div></section><section id='agents-view' class='hidden'><div class='flex items-center justify-between mb-6'><div><h2 class='text-xl font-bold text-white'>Agents IA</h2><p class='text-sm text-slate-400 mt-1'>Gérez vos agents et leur statut opérationnel</p></div><div class='flex gap-3'><button class='px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm border border-slate-700 hover:bg-slate-700 transition-colors'><i class='fa-solid fa-filter mr-2'></i>Filtrer</button><button class='px-4 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors'><i class='fa-solid fa-plus mr-2'></i>Nouvel agent</button></div></div><div class='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4' id='agents-grid'></div></section><section id='supervision-view' class='hidden'><div class='mb-6'><h2 class='text-xl font-bold text-white'>Supervision en temps réel</h2><p class='text-sm text-slate-400 mt-1'>Transferts humains et motifs d'appel</p></div><div class='grid grid-cols-1 lg:grid-cols-2 gap-6'><div class='bg-slate-800 rounded-xl border border-slate-700 p-5'><h3 class='text-base font-semibold text-white mb-4'>Motifs de transfert vers humain</h3><div class='space-y-4' id='transfer-reasons'><div class='flex items-center gap-4'><div class='w-32 text-sm text-slate-400'>Complainte</div><div class='flex-1 h-6 bg-slate-900 rounded-full overflow-hidden'><div class='h-full bg-rose-500/60 rounded-full' style='width:35%'></div></div><span class='text-sm font-medium text-white w-10 text-right'>35%</span></div><div class='flex items-center gap-4'><div class='w-32 text-sm text-slate-400'>Demande complexe</div><div class='flex-1 h-6 bg-slate-900 rounded-full overflow-hidden'><div class='h-full bg-amber-500/60 rounded-full' style='width:28%'></div></div><span class='text-sm font-medium text-white w-10 text-right'>28%</span></div><div class='flex items-center gap-4'><div class='w-32 text-sm text-slate-400'>Vente B2B</div><div class='flex-1 h-6 bg-slate-900 rounded-full overflow-hidden'><div class='h-full bg-blue-500/60 rounded-full' style='width:20%'></div></div><span class='text-sm font-medium text-white w-10 text-right'>20%</span></div><div class='flex items-center gap-4'><div class='w-32 text-sm text-slate-400'>Réclamation</div><div class='flex-1 h-6 bg-slate-900 rounded-full overflow-hidden'><div class='h-full bg-violet-500/60 rounded-full' style='width:12%'></div></div><span class='text-sm font-medium text-white w-10 text-right'>12%</span></div><div class='flex items-center gap-4'><div class='w-32 text-sm text-slate-400'>Autre</div><div class='flex-1 h-6 bg-slate-900 rounded-full overflow-hidden'><div class='h-full bg-slate-500/60 rounded-full' style='width:5%'></div></div><span class='text-sm font-medium text-white w-10 text-right'>5%</span></div></div></div><div class='bg-slate-800 rounded-xl border border-slate-700 p-5'><h3 class='text-base font-semibold text-white mb-4'>Performance par agent</h3><div class='space-y-3' id='performance-list'></div></div></div></section><section id='actions-view' class='hidden'><div class='mb-6'><h2 class='text-xl font-bold text-white'>Actions à valider</h2><p class='text-sm text-slate-400 mt-1'>Un agent IA ne publie ni n'envoie jamais rien sans OK d'un humain</p></div><div class='bg-slate-800 rounded-xl border border-slate-700 overflow-hidden'><div class='p-4 border-b border-slate-700 flex items-center gap-4'><button class='px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 text-xs font-medium border border-blue-500/20'>Toutes</button><button class='px-3 py-1.5 rounded-lg text-slate-400 text-xs hover:bg-slate-700 transition-colors'>Emails</button><button class='px-3 py-1.5 rounded-lg text-slate-400 text-xs hover:bg-slate-700 transition-colors'>Publications</button><button class='px-3 py-1.5 rounded-lg text-slate-400 text-xs hover:bg-slate-700 transition-colors'>Rendez-vous</button></div><div class='divide-y divide-slate-700' id='actions-list'></div></div></section><section id='settings-view' class='hidden'><div class='max-w-2xl'><div class='mb-6'><h2 class='text-xl font-bold text-white'>Paramètres</h2><p class='text-sm text-slate-400 mt-1'>Configuration de la console de pilotage</p></div><div class='bg-slate-800 rounded-xl border border-slate-700 p-6 space-y-6'><div class='flex items-center justify-between'><div><h3 class='text-sm font-semibold text-white'>Mode maintenance</h3><p class='text-xs text-slate-400 mt-1'>Mettre tous les agents en pause</p></div><button class='w-12 h-6 rounded-full bg-slate-700 relative transition-colors' id='maintenance-toggle'><div class='w-5 h-5 rounded-full bg-white absolute top-0.5 left-0.5 transition-transform'></div></button></div><div class='border-t border-slate-700 pt-6'><h3 class='text-sm font-semibold text-white mb-3'>Seuils d'alerte</h3><div class='space-y-4'><div class='flex items-center justify-between'><span class='text-sm text-slate-400'>Taux transfert max</span><div class='flex items-center gap-3'><input type='range' min='5' max='50' value='15' class='w-32 accent-blue-500'><span class='text-sm font-medium text-white w-8'>15%</span></div></div><div class='flex items-center justify-between'><span class='text-sm text-slate-400'>Temps réponse max</span><div class='flex items-center gap-3'><input type='range' min='1' max='10' value='5' class='w-32 accent-blue-500'><span class='text-sm font-medium text-white w-8'>5s</span></div></div></div></div><div class='border-t border-slate-700 pt-6'><h3 class='text-sm font-semibold text-white mb-3'>Notifications</h3><div class='space-y-3'><label class='flex items-center gap-3'><input type='checkbox' checked class='w-4 h-4 rounded border-slate-600 bg-slate-900 text-blue-500 accent-blue-500'><span class='text-sm text-slate-300'>Email pour actions en attente</span></label><label class='flex items-center gap-3'><input type='checkbox' checked class='w-4 h-4 rounded border-slate-600 bg-slate-900 text-blue-500 accent-blue-500'><span class='text-sm text-slate-300'>Alerte seuil transfert</span></label><label class='flex items-center gap-3'><input type='checkbox' class='w-4 h-4 rounded border-slate-600 bg-slate-900 text-blue-500 accent-blue-500'><span class='text-sm text-slate-300'>Rapport quotidien</span></label></div></div></div></div></section></div></main><div id='toast-container' class='fixed bottom-4 right-4 z-50 space-y-2'></div></div><script>const agents=[{id:'charly',name:'Charly',role:'Orchestrateur de direction',avatar:'C',color:'bg-violet-500',status:'online',description:'Supervise la stratégie et la coordination globale des agents',metrics:{transfert:8,rdv:12,responseTime:1.2},tasks:[]},{id:'tom',name:'Tom',role:'Agent vocal (VoIP)',avatar:'T',color:'bg-blue-500',status:'online',description:'Gère les appels entrants et la qualification vocale',metrics:{transfert:23,rdv:45,responseTime:2.1},tasks:[{id:1,type:'email',title:'Email de relance — Client Dupont',agent:'Tom',time:'14:32',content:'Bonjour, suite à notre conversation...'}]},{id:'julia',name:'Julia',role:'Conformité & Risques',avatar:'J',color:'bg-emerald-500',status:'online',description:'Vérifie la conformité réglementaire des interactions',metrics:{transfert:5,rdv:3,responseTime:4.5},tasks:[]},{id:'sam',name:'Sam',role:'Distribution & Logistique',avatar:'S',color:'bg-amber-500',status:'busy',description:'Gère la distribution et la logistique commerciale',metrics:{transfert:12,rdv:18,responseTime:1.8},tasks:[{id:2,type:'publish',title:'Publication LinkedIn — Offre été',agent:'Sam',time:'13:15',content:'Découvrez notre nouvelle offre...'}]},{id:'rony',name:'Rony',role:'Ressources Humaines',avatar:'R',color:'bg-rose-500',status:'online',description:'Gère le recrutement et les relations RH',metrics:{transfert:3,rdv:22,responseTime:1.5},tasks:[]},{id:'john',name:'John',role:'Communication & Marque',avatar:'J',color:'bg-cyan-500',status:'offline',description:'Gère la communication externe et la marque employeur',metrics:{transfert:0,rdv:0,responseTime:0},tasks:[]},{id:'lou',name:'Lou',role:'SEO & Content',avatar:'L',color:'bg-indigo-500',status:'online',description:'Optimise le référencement et la stratégie de contenu',metrics:{transfert:7,rdv:8,responseTime:2.3},tasks:[]},{id:'manue',name:'Manue',role:'Finance & Contrôle',avatar:'M',color:'bg-teal-500',status:'online',description:'Supervise les aspects financiers et le contrôle de gestion',metrics:{transfert:2,rdv:5,responseTime:3.1},tasks:[]},{id:'nora',name:'Nora',role:'Formation & Support',avatar:'N',color:'bg-pink-500',status:'online',description:'Gère la formation et le support client',metrics:{transfert:15,rdv:28,responseTime:1.9},tasks:[{id:3,type:'rdv',title:'RDV — Démonstration client',agent:'Nora',time:'10:00',content:'Présentation solution mutuelle'}]}];let pendingActions=agents.flatMap(a=>a.tasks||[]).filter(t=>t);function showToast(message,type='info'){const container=document.getElementById('toast-container');const toast=document.createElement('div');const colors={info:'bg-blue-500',success:'bg-emerald-500',warning:'bg-amber-500',error:'bg-rose-500'};toast.className=`${colors[type]} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 slide-in`;toast.innerHTML=`<i class='fa-solid ${type==='success'?'fa-check':type==='error'?'fa-xmark':'fa-info-circle'}'></i><span class='text-sm font-medium'>${message}</span>`;container.appendChild(toast);setTimeout(()=>{toast.style.opacity='0';toast.style.transform='translateY(10px)';setTimeout(()=>toast.remove(),300)},3000)}function updateMetrics(){const active=agents.filter(a=>a.status==='online').length;const totalTransfer=agents.reduce((s,a)=>s+a.metrics.transfert,0);const avgTransfer=Math.round(totalTransfer/agents.filter(a=>a.status==='online').length);const totalRdv=agents.reduce((s,a)=>s+a.metrics.rdv,0);document.getElementById('metric-active').textContent=active;document.getElementById('metric-active-trend').textContent='+'+active;document.getElementById('metric-transfer').textContent=avgTransfer+'%';document.getElementById('metric-rdv').textContent=totalRdv;document.getElementById('metric-pending').textContent=pendingActions.length;const badge=document.getElementById('notif-badge');const actionBadge=document.getElementById('pending-actions-badge');if(pendingActions.length>0){badge.classList.remove('hidden');badge.textContent=pendingActions.length;actionBadge.classList.remove('hidden');actionBadge.textContent=pendingActions.length}else{badge.classList.add('hidden');actionBadge.classList.add('hidden')}}function renderAgents(){const grid=document.getElementById('agents-grid');grid.innerHTML=agents.map(agent=>`<div class='agent-card bg-slate-800 rounded-xl border border-slate-700 p-5'><div class='flex items-start justify-between mb-4'><div class='flex items-center gap-3'><div class='w-12 h-12 rounded-xl ${agent.color} flex items-center justify-center text-white text-lg font-bold'>${agent.avatar}</div><div><h3 class='font-semibold text-white'>${agent.name}</h3><p class='text-xs text-slate-400'>${agent.role}</p></div></div><button onclick='toggleAgentStatus(${JSON.stringify(agent.id)})' class='px-3 py-1 rounded-full text-xs font-medium transition-all ${agent.status==='online'?'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20':'bg-slate-700 text-slate-400 border border-slate-600'}'>${agent.status==='online'?'ON':'OFF'}</button></div><p class='text-sm text-slate-400 mb-4'>${agent.description}</p><div class='grid grid-cols-3 gap-3'><div class='bg-slate-900 rounded-lg p-3 text-center'><p class='text-lg font-bold text-white metric-value'>${agent.metrics.transfert}%</p><p class='text-xs text-slate-500'>Transfert</p></div><div class='bg-slate-900 rounded-lg p-3 text-center'><p class='text-lg font-bold text-white metric-value'>${agent.metrics.rdv}</p><p class='text-xs text-slate-500'>RDV</p></div><div class='bg-slate-900 rounded-lg p-3 text-center'><p class='text-lg font-bold text-white metric-value'>${agent.metrics.responseTime}s</p><p class='text-xs text-slate-500'>Réponse</p></div></div></div>`).join('')}function toggleAgentStatus(agentId){const agent=agents.find(a=>a.id===agentId);if(agent){agent.status=agent.status==='online'?'offline':'online';renderAgents();updateMetrics();showToast(`${agent.name} est maintenant ${agent.status==='online'?'ACTIF':'INACTIF'}`,'success')}}function renderActions(){const list=document.getElementById('actions-list');if(pendingActions.length===0){list.innerHTML=`<div class='p-8 text-center'><div class='w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-3'><i class='fa-solid fa-check text-emerald-400 text-xl'></i></div><p class='text-slate-400'>Aucune action en attente</p><p class='text-xs text-slate-500 mt-1'>Toutes les actions ont été traitées</p></div>`;return}list.innerHTML=pendingActions.map(action=>{const icons={email:'fa-envelope',publish:'fa-share-nodes',rdv:'fa-calendar'};const colors={email:'bg-blue-500/10 text-blue-400',publish:'bg-violet-500/10 text-violet-400',rdv:'bg-emerald-500/10 text-emerald-400'};const labels={email:'Email',publish:'Publication',rdv:'Rendez-vous'};return`<div class='p-4 flex items-start gap-4'><div class='w-10 h-10 rounded-lg ${colors[action.type]} flex items-center justify-center flex-shrink-0'><i class='fa-solid ${icons[action.type]}'></i></div><div class='flex-1 min-w-0'><div class='flex items-center gap-2 mb-1'><span class='text-xs font-medium px-2 py-0.5 rounded-full ${colors[action.type]} border border-slate-700'>${labels[action.type]}</span><span class='text-xs text-slate-500'>${action.time}</span></div><p class='text-sm font-medium text-white'>${action.title}</p><p class='text-xs text-slate-400 mt-1'>${action.content}</p><p class='text-xs text-slate-500 mt-1'>Agent: <span class='text-slate-300'>${action.agent}</span></p></div><div class='flex gap-2'><button onclick='validateAction(${action.id})' class='px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors'><i class='fa-solid fa-check mr-1'></i>Valider</button><button onclick='rejectAction(${action.id})' class='px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-400 text-xs font-medium border border-rose-500/20 hover:bg-rose-500/20 transition-colors'><i class='fa-solid fa-xmark mr-1'></i>Rejeter</button></div></div>`}).join('')}function validateAction(id){pendingActions=pendingActions.filter(a=>a.id!==id);renderActions();updateMetrics();showToast('Action validée — L agent peut procéder','success')}function rejectAction(id){pendingActions=pendingActions.filter(a=>a.id!==id);renderActions();updateMetrics();showToast('Action rejetée','warning')}function renderPerformance(){const list=document.getElementById('performance-list');const onlineAgents=agents.filter(a=>a.status==='online').sort((a,b)=>b.metrics.transfert-a.metrics.transfert);list.innerHTML=onlineAgents.map((agent,i)=>`<div class='flex items-center gap-4 p-3 rounded-lg bg-slate-900'><div class='w-8 h-8 rounded-lg ${agent.color} flex items-center justify-center text-white text-xs font-bold'>${agent.avatar}</div><div class='flex-1 min-w-0'><div class='flex items-center justify-between mb-1'><span class='text-sm font-medium text-white'>${agent.name}</span><span class='text-xs ${agent.metrics.transfert>15?'text-rose-400':'text-emerald-400'}'>${agent.metrics.transfert}% transfert</span></div><div class='w-full h-2 bg-slate-800 rounded-full overflow-hidden'><div class='h-full ${agent.metrics.transfert>15?'bg-rose-500/60':'bg-emerald-500/60'} rounded-full' style='width:${agent.metrics.transfert}%'></div></div></div></div>`).join('')}document.querySelectorAll('.nav-item').forEach(item=>{item.addEventListener('click',e=>{e.preventDefault();const target=item.getAttribute('href').substring(1);document.querySelectorAll('section[id$=view]').forEach(s=>s.classList.add('hidden'));document.getElementById(target+'-view').classList.remove('hidden');document.querySelectorAll('.nav-item').forEach(n=>{n.classList.remove('bg-blue-500/10','text-blue-400','border','border-blue-500/20');n.classList.add('text-slate-400')});item.classList.add('bg-blue-500/10','text-blue-400','border','border-blue-500/20');item.classList.remove('text-slate-400');document.getElementById('page-title').textContent=item.querySelector('span').textContent;document.querySelector('.sidebar').classList.remove('open')})});document.getElementById('menu-toggle').addEventListener('click',()=>{document.querySelector('.sidebar').classList.toggle('open')});document.getElementById('maintenance-toggle').addEventListener('click',function(){const dot=this.querySelector('div');const isOn=this.classList.contains('bg-emerald-500');if(isOn){this.classList.remove('bg-emerald-500');this.classList.add('bg-slate-700');dot.style.transform='translateX(0)';agents.forEach(a=>a.status='offline');showToast('Mode maintenance activé — Tous les agents sont OFF','warning')}else{this.classList.add('bg-emerald-500');this.classList.remove('bg-slate-700');dot.style.transform='translateX(24px)';agents.forEach(a=>a.status='online');showToast('Mode maintenance désactivé — Agents réactivés','success')}renderAgents();updateMetrics()});updateMetrics();renderAgents();renderActions();renderPerformance()</script></body></html>
+<!DOCTYPE html><html lang="fr" class="dark" data-theme="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Console de Pilotage — Agents IA FIDES</title><script src="https://cdn.tailwindcss.com"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"><script>tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Plus Jakarta Sans','system-ui','sans-serif'],mono:['JetBrains Mono','monospace']},colors:{dark:{900:'#0a0a0f',800:'#13131f',700:'#1c1c2e',600:'#252540',border:'rgba(255,255,255,0.06)'},gold:{DEFAULT:'#D4A853',light:'#E8C878',dark:'#B8923F',glow:'rgba(212,168,83,0.15)'},status:{online:'#10B981',offline:'#EF4444',busy:'#F59E0B',idle:'#6B7280'}}}}}</script><style>*,*::before,*::after{box-sizing:border-box}html,body{margin:0;padding:0}body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#0a0a0f;color:#fafafa;min-height:100vh;overflow-x:hidden}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.2)}.glass{background:rgba(19,19,31,0.8);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.06)}.card-hover{transition:all .3s cubic-bezier(.4,0,.2,1)}.card-hover:hover{transform:translateY(-2px);box-shadow:0 20px 40px rgba(0,0,0,.3),0 0 0 1px rgba(212,168,83,.1)}.gold-glow{box-shadow:0 0 20px rgba(212,168,83,.15),0 0 40px rgba(212,168,83,.05)}.pulse-dot{animation:pulse-dot 2s infinite}@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}.slide-in{animation:slideIn .5s cubic-bezier(.16,1,.3,1)}@keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}.fade-in{animation:fadeIn .3s ease}@keyframes fadeIn{from{opacity:0}to{opacity:1}}.chart-bar{transition:height .6s cubic-bezier(.16,1,.3,1)}.status-badge{transition:all .2s ease}.agent-toggle{transition:all .3s cubic-bezier(.4,0,.2,1)}.agent-toggle:hover{transform:scale(1.05)}.log-entry{animation:logSlide .3s cubic-bezier(.16,1,.3,1)}@keyframes logSlide{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}.toast-enter{animation:toastEnter .4s cubic-bezier(.16,1,.3,1)}@keyframes toastEnter{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}.toast-exit{animation:toastExit .3s ease forwards}@keyframes toastExit{to{transform:translateX(100%);opacity:0}}.grid-bg{background-image:radial-gradient(rgba(255,255,255,.03) 1px,transparent 1px);background-size:24px 24px}.shimmer{background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);background-size:200% 100%;animation:shimmer 2s infinite}@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}</style></head><body class="grid-bg"><div id="app"></div><script>
+const AGENTS=[
+{id:'charly',name:'Charly',role:'Orchestrateur',icon:'fa-chess-king',color:'#D4A853',description:'Coordination globale et supervision',status:'online',tasks:42,efficiency:97,lastActive:'Il y a 2 min',actions:[{type:'validation',text:"Approuver le transfert B2C #1245 vers l'agent Qualification Mutuelle TN",time:'14:32',priority:'high'},{type:'alert',text:"Taux de conversion B2B en baisse (-12%)",time:'14:28',priority:'medium'}]},
+{id:'tom',name:'Tom',role:'VoIP',icon:'fa-phone-volume',color:'#3B82F6',description:'Gestion des appels et communications',status:'online',tasks:28,efficiency:94,lastActive:'Actif',actions:[{type:'validation',text:"Confirmer la qualite audio de la campagne France",time:'14:25',priority:'medium'}]},
+{id:'julia',name:'Julia',role:'Conformite',icon:'fa-shield-halved',color:'#8B5CF6',description:'Verification et compliance',status:'busy',tasks:15,efficiency:91,lastActive:'14:20',actions:[{type:'validation',text:"Valider le dossier conformite du lead #8921",time:'14:30',priority:'high'},{type:'alert',text:"Document KYC manquant pour 3 leads",time:'14:15',priority:'high'}]},
+{id:'sam',name:'Sam',role:'Distribution',icon:'fa-network-wired',color:'#10B981',description:'Routage et distribution des leads',status:'online',tasks:35,efficiency:96,lastActive:'Actif',actions:[{type:'validation',text:"Redistribuer 12 leads B2C vers le pipeline Mutuelle TN",time:'14:18',priority:'medium'}]},
+{id:'rony',name:'Rony',role:'RH',icon:'fa-users',color:'#EC4899',description:'Recrutement et gestion equipe',status:'idle',tasks:8,efficiency:88,lastActive:'13:45',actions:[]},
+{id:'john',name:'John',role:'Communication',icon:'fa-comments',color:'#06B6D4',description:'Messages et interactions client',status:'online',tasks:56,efficiency:93,lastActive:'Actif',actions:[{type:'alert',text:"File d'attente WhatsApp > 25 messages",time:'14:29',priority:'medium'}]},
+{id:'lou',name:'Lou',role:'SEO',icon:'fa-magnifying-glass-chart',color:'#F59E0B',description:'Optimisation et visibilite',status:'online',tasks:22,efficiency:89,lastActive:'14:10',actions:[{type:'validation',text:"Approuver la mise a jour du sitemap pour la Tunisie",time:'14:05',priority:'low'}]},
+{id:'manue',name:'Manue',role:'Finance',icon:'fa-chart-line',color:'#6366F1',description:'Analyse financiere et reporting',status:'busy',tasks:18,efficiency:95,lastActive:'14:22',actions:[{type:'validation',text:"Valider le forecast mensuel Q3",time:'14:20',priority:'high'}]},
+{id:'nora',name:'Nora',role:'Formation',icon:'fa-graduation-cap',color:'#F97316',description:'Formation et onboarding',status:'online',tasks:12,efficiency:92,lastActive:'14:15',actions:[]}];
+
+const METRICS={transfersToday:147,transfersWeek:823,rdvB2C:34,rdvB2B:12,conversionRate:23.1,avgResponseTime:'2m 34s',activeNow:7};
+
+const ALERTS=[{id:1,type:'warning',message:"Taux de transfert B2B en baisse sur les derniers 7 jours",time:'14:30',agent:'Charly'},{id:2,type:'error',message:"3 leads en attente de validation KYC depuis > 24h",time:'14:25',agent:'Julia'},{id:3,type:'info',message:"Nouvelle campagne VoIP France lancee",time:'14:15',agent:'Tom'},{id:4,type:'success',message:"Record de RDV B2C ce mois : 156 rendez-vous",time:'13:50',agent:'Sam'}];
+
+const PERFORMANCE_DATA=[{label:'Lun',transfers:98,rdv:22},{label:'Mar',transfers:112,rdv:28},{label:'Mer',transfers:105,rdv:25},{label:'Jeu',transfers:134,rdv:31},{label:'Ven',transfers:128,rdv:29},{label:'Sam',transfers:87,rdv:18},{label:'Dim',transfers:72,rdv:15}];
+
+let currentView='dashboard',selectedAgent=null,maintenanceMode=false;
+
+function cn(...classes){return classes.filter(Boolean).join(' ')}
+
+function renderApp(){document.getElementById('app').innerHTML=`
+<div class="min-h-screen flex flex-col">
+<header class="glass sticky top-0 z-50 border-b border-white/5">
+<div class="max-w-[1600px] mx-auto px-4 lg:px-6 h-16 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center shadow-lg shadow-gold/20">
+<i class="fa-solid fa-robot text-dark-900 text-lg"></i>
+</div>
+<div>
+<h1 class="text-lg font-bold tracking-tight">Console de Pilotage</h1>
+<p class="text-xs text-white/40">Agents IA NOMMES — FIDES CONSEIL</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5">
+<div class="w-2 h-2 rounded-full bg-status-online pulse-dot"></div>
+<span class="text-xs font-medium text-white/60">${METRICS.activeNow}/9 actifs</span>
+</div>
+<button onclick="toggleMaintenance()" id="maintenanceBtn" class="px-4 py-2 rounded-lg text-xs font-semibold transition-all ${maintenanceMode?'bg-red-500/20 text-red-400 border border-red-500/30':'bg-white/5 text-white/60 border border-white/5 hover:bg-white/10'}">
+<i class="fa-solid ${maintenanceMode?'fa-play':'fa-pause'} mr-2"></i>${maintenanceMode?'Reprendre':'Pause'}
+</button>
+<div class="w-8 h-8 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center text-dark-900 text-xs font-bold">A</div>
+</div>
+</div>
+</header>
+
+<div class="flex-1 flex max-w-[1600px] mx-auto w-full">
+<nav class="hidden lg:flex w-64 flex-col glass border-r border-white/5 py-6">
+<div class="px-4 mb-6"><p class="text-[10px] uppercase tracking-wider text-white/30 font-semibold mb-3">Navigation</p></div>
+${[['dashboard','fa-chart-pie','Tableau de bord'],['agents','fa-users','Agents','agents'],['supervision','fa-eye','Supervision','supervision'],['actions','fa-list-check','Actions','actions'],['settings','fa-gear','Parametres']].map(([id,icon,label,badge])=>`
+<button onclick="setView('${id}')" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all relative ${currentView===id?'text-gold bg-gold/5 border-r-2 border-gold':'text-white/50 hover:text-white/80 hover:bg-white/5'}">
+<i class="fa-solid ${icon} w-5 text-center ${currentView===id?'text-gold':'text-white/30'}"></i>
+<span>${label}</span>
+${badge?`<span class="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-gold/20 text-gold font-semibold">${badge}</span>`:''}
+</button>`).join('')}
+<div class="mt-auto px-4">
+<div class="p-4 rounded-xl bg-gradient-to-br from-gold/10 to-transparent border border-gold/10">
+<p class="text-xs font-semibold text-gold mb-1">Tache #12</p>
+<p class="text-[10px] text-white/40">Jour 2, Section 5 — 14h00-15h30</p>
+<div class="mt-2 w-full h-1.5 bg-white/5 rounded-full overflow-hidden"><div class="h-full w-full bg-gold rounded-full"></div></div>
+</div>
+</div>
+</nav>
+
+<main class="flex-1 p-4 lg:p-6 overflow-auto">
+${currentView==='dashboard'?renderDashboard():currentView==='agents'?renderAgentsView():currentView==='supervision'?renderSupervisionView():currentView==='actions'?renderActionsView():renderSettingsView()}
+</main>
+</div>
+</div>
+<div id="toast-container" class="fixed bottom-6 right-6 z-[100] flex flex-col gap-2"></div>`;}
+
+function renderDashboard(){return`
+<div class="space-y-6 slide-in">
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+${[['Transferts Auj.','fa-right-left',METRICS.transfersToday,'+12% vs hier','text-gold'],['RDV B2C','fa-calendar-check',METRICS.rdvB2C,'+5 cette semaine','text-green-400'],['RDV B2B','fa-handshake',METRICS.rdvB2B,'Objectif: 15','text-blue-400'],['Taux Conversion','fa-percent',METRICS.conversionRate+'%','+2.3% vs moy.','text-purple-400']].map(([label,icon,value,subtext,color])=>`
+<div class="glass rounded-2xl p-5 card-hover">
+<div class="flex items-center justify-between mb-3">
+<p class="text-xs text-white/40 font-medium">${label}</p>
+<div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+<i class="fa-solid ${icon} text-sm ${color}"></i>
+</div>
+</div>
+<p class="text-2xl font-bold tracking-tight">${value}</p>
+<p class="text-[10px] text-white/30 mt-1">${subtext}</p>
+</div>`).join('')}
+</div>
+
+<div class="grid lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 glass rounded-2xl p-6 card-hover">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-sm font-semibold">Performance Hebdomadaire</h3>
+<div class="flex items-center gap-4 text-[10px]">
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-gold"></span>Transferts</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-green-400"></span>RDV</span>
+</div>
+</div>
+<div class="h-64 flex items-end gap-3">
+${PERFORMANCE_DATA.map((d,i)=>`
+<div class="flex-1 flex flex-col gap-2 group">
+<div class="flex-1 flex items-end gap-1">
+<div class="flex-1 bg-gold/20 rounded-t-lg relative overflow-hidden chart-bar group-hover:bg-gold/30 transition-all" style="height:${(d.transfers/150)*100}%"><div class="absolute bottom-0 left-0 right-0 bg-gold/60 rounded-t-lg transition-all" style="height:100%"></div></div>
+<div class="flex-1 bg-green-400/20 rounded-t-lg relative overflow-hidden chart-bar group-hover:bg-green-400/30 transition-all" style="height:${(d.rdv/40)*100}%"><div class="absolute bottom-0 left-0 right-0 bg-green-400/60 rounded-t-lg transition-all" style="height:100%"></div></div>
+</div>
+<p class="text-[10px] text-white/30 text-center font-medium">${d.label}</p>
+</div>`).join('')}
+</div>
+</div>
+
+<div class="glass rounded-2xl p-6 card-hover">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-semibold">Alertes Recentes</h3>
+<span class="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 font-medium">${ALERTS.length} active${ALERTS.length>1?'s':''}</span>
+</div>
+<div class="space-y-3">
+${ALERTS.map(a=>`
+<div class="p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all cursor-pointer log-entry">
+<div class="flex items-start gap-3">
+<div class="w-7 h-7 rounded-lg ${a.type==='error'?'bg-red-500/10':a.type==='warning'?'bg-yellow-500/10':a.type==='success'?'bg-green-500/10':'bg-blue-500/10'} flex items-center justify-center flex-shrink-0 mt-0.5">
+<i class="fa-solid ${a.type==='error'?'fa-triangle-exclamation':a.type==='warning'?'fa-circle-exclamation':a.type==='success'?'fa-check':'fa-info'} text-[10px] ${a.type==='error'?'text-red-400':a.type==='warning'?'text-yellow-400':a.type==='success'?'text-green-400':'text-blue-400'}"></i>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-medium text-white/80 leading-relaxed">${a.message}</p>
+<div class="flex items-center gap-2 mt-1.5">
+<span class="text-[10px] text-white/30">${a.time}</span>
+<span class="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-white/40">${a.agent}</span>
+</div>
+</div>
+</div>
+</div>`).join('')}
+</div>
+</div>
+</div>
+
+<div class="glass rounded-2xl p-6 card-hover">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-semibold">Agents Actifs</h3>
+<button onclick="setView('agents')" class="text-[10px] text-gold hover:text-gold-light transition-colors font-medium">Voir tout <i class="fa-solid fa-arrow-right ml-1"></i></button>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+${AGENTS.filter(a=>a.status==='online').map(a=>`
+<div onclick="selectAgent('${a.id}')" class="p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:border-gold/20 transition-all cursor-pointer group">
+<div class="flex items-center gap-3 mb-3">
+<div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:${a.color}15">
+<i class="fa-solid ${a.icon}" style="color:${a.color}"></i>
+</div>
+<div class="w-2 h-2 rounded-full bg-status-online pulse-dot"></div>
+</div>
+<p class="text-sm font-semibold group-hover:text-gold transition-colors">${a.name}</p>
+<p class="text-[10px] text-white/40">${a.role}</p>
+<div class="mt-3 flex items-center justify-between">
+<span class="text-[10px] text-white/30">${a.tasks} taches</span>
+<span class="text-[10px] font-semibold" style="color:${a.color}">${a.efficiency}%</span>
+</div>
+</div>`).join('')}
+</div>
+</div>
+</div>`;}
+
+function renderAgentsView(){return`
+<div class="space-y-6 slide-in">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="text-xl font-bold">Agents IA</h2>
+<p class="text-sm text-white/40 mt-0.5">Gestion et supervision des 9 agents nommes</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-xs text-white/40">${AGENTS.filter(a=>a.status==='online').length} en ligne</span>
+<div class="flex -space-x-1">
+${AGENTS.filter(a=>a.status==='online').slice(0,4).map(a=>`<div class="w-6 h-6 rounded-full border-2 border-dark-900 flex items-center justify-center text-[8px] font-bold" style="background:${a.color}20;color:${a.color}">${a.name[0]}</div>`).join('')}
+${AGENTS.filter(a=>a.status==='online').length>4?`<div class="w-6 h-6 rounded-full border-2 border-dark-900 bg-white/10 flex items-center justify-center text-[8px] font-medium text-white/60">+${AGENTS.filter(a=>a.status==='online').length-4}</div>`:''}
+</div>
+</div>
+</div>
+
+<div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+${AGENTS.map(a=>`
+<div class="glass rounded-2xl p-5 card-hover relative overflow-hidden group" id="agent-${a.id}">
+<div class="absolute top-0 right-0 w-32 h-32 rounded-full opacity-5 group-hover:opacity-10 transition-opacity" style="background:${a.color};filter:blur(40px);transform:translate(30%,-30%)"></div>
+<div class="relative">
+<div class="flex items-start justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-2xl flex items-center justify-center" style="background:${a.color}15;border:1px solid ${a.color}20">
+<i class="fa-solid ${a.icon} text-lg" style="color:${a.color}"></i>
+</div>
+<div>
+<h3 class="font-semibold text-sm">${a.name}</h3>
+<p class="text-[11px] text-white/40">${a.role}</p>
+</div>
+</div>
+<button onclick="toggleAgent('${a.id}')" class="agent-toggle relative w-12 h-6 rounded-full transition-all ${a.status==='online'?'bg-status-online/20':'bg-white/5'}" style="border:1px solid ${a.status==='online'?'rgba(16,185,129,0.3)':'rgba(255,255,255,0.1)'}">
+<div class="absolute top-0.5 ${a.status==='online'?'left-6':'left-0.5'} w-5 h-5 rounded-full transition-all shadow-sm" style="background:${a.status==='online'?'#10B981':a.status==='busy'?'#F59E0B':'#EF4444'}"></div>
+</button>
+</div>
+<p class="text-xs text-white/50 mb-4 leading-relaxed">${a.description}</p>
+<div class="grid grid-cols-3 gap-3 mb-4">
+<div class="text-center p-2 rounded-lg bg-white/[0.02]">
+<p class="text-lg font-bold" style="color:${a.color}">${a.tasks}</p>
+<p class="text-[9px] text-white/30 uppercase tracking-wider">Taches</p>
+</div>
+<div class="text-center p-2 rounded-lg bg-white/[0.02]">
+<p class="text-lg font-bold text-white/80">${a.efficiency}%</p>
+<p class="text-[9px] text-white/30 uppercase tracking-wider">Effic.</p>
+</div>
+<div class="text-center p-2 rounded-lg bg-white/[0.02]">
+<p class="text-lg font-bold ${a.status==='online'?'text-green-400':a.status==='busy'?'text-yellow-400':'text-gray-400'}">${a.status==='online'?'ON':a.status==='busy'?'BUSY':'OFF'}</p>
+<p class="text-[9px] text-white/30 uppercase tracking-wider">Statut</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-3 border-t border-white/5">
+<span class="text-[10px] text-white/30"><i class="fa-regular fa-clock mr-1"></i>${a.lastActive}</span>
+<button onclick="selectAgent('${a.id}')" class="text-[10px] px-3 py-1.5 rounded-lg bg-white/5 hover:bg-gold/10 text-white/60 hover:text-gold transition-all border border-white/5 hover:border-gold/20 font-medium">Superviser</button>
+</div>
+</div>
+</div>`).join('')}
+</div>
+</div>`;}
+
+function renderSupervisionView(){const a=selectedAgent?AGENTS.find(x=>x.id===selectedAgent):null;return`
+<div class="space-y-6 slide-in">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="text-xl font-bold">Supervision</h2>
+<p class="text-sm text-white/40 mt-0.5">Vue detaillee par agent</p>
+</div>
+${a?`<button onclick="selectedAgent=null;renderApp();" class="text-xs text-white/40 hover:text-white/80 transition-colors"><i class="fa-solid fa-arrow-left mr-1"></i>Retour</button>`:''}
+</div>
+
+${!a?`
+<div class="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+${AGENTS.map(agent=>`
+<div onclick="selectAgent('${agent.id}')" class="glass rounded-2xl p-5 card-hover cursor-pointer group">
+<div class="flex items-center gap-3 mb-3">
+<div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:${agent.color}15">
+<i class="fa-solid ${agent.icon}" style="color:${agent.color}"></i>
+</div>
+<div>
+<h3 class="font-semibold text-sm group-hover:text-gold transition-colors">${agent.name}</h3>
+<p class="text-[11px] text-white/40">${agent.role}</p>
+</div>
+<div class="ml-auto">
+<div class="w-2.5 h-2.5 rounded-full ${agent.status==='online'?'bg-green-400 pulse-dot':agent.status==='busy'?'bg-yellow-400':'bg-red-400'}"></div>
+</div>
+</div>
+<div class="flex items-center justify-between text-xs text-white/40">
+<span>${agent.tasks} taches en cours</span>
+<span class="font-medium" style="color:${agent.color}">${agent.efficiency}% eff.</span>
+</div>
+<div class="mt-3 h-1 bg-white/5 rounded-full overflow-hidden">
+<div class="h-full rounded-full transition-all" style="width:${agent.efficiency}%;background:${agent.color};opacity:0.7"></div>
+</div>
+</div>`).join('')}
+</div>`:`
+<div class="space-y-6">
+<div class="glass rounded-2xl p-6">
+<div class="flex items-center gap-4 mb-6">
+<div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background:${a.color}15;border:2px solid ${a.color}30">
+<i class="fa-solid ${a.icon} text-2xl" style="color:${a.color}"></i>
+</div>
+<div>
+<h3 class="text-xl font-bold">${a.name}</h3>
+<p class="text-sm text-white/40">${a.role} — ${a.description}</p>
+</div>
+<div class="ml-auto flex items-center gap-2">
+<span class="px-3 py-1 rounded-full text-xs font-medium ${a.status==='online'?'bg-green-500/10 text-green-400 border border-green-500/20':a.status==='busy'?'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20':'bg-red-500/10 text-red-400 border border-red-500/20'}">${a.status==='online'?'En ligne':a.status==='busy'?'Occupe':'Hors ligne'}</span>
+<button onclick="toggleAgent('${a.id}')" class="px-4 py-2 rounded-lg text-xs font-semibold ${a.status==='online'?'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20':'bg-green-500/10 text-green-400 border border-green-500/20 hover:bg-green-500/20'} transition-all">
+${a.status==='online'?'<i class="fa-solid fa-power-off mr-1"></i>Arreter':'<i class="fa-solid fa-power-off mr-1"></i>Demarrer'}
+</button>
+</div>
+</div>
+
+<div class="grid grid-cols-4 gap-4">
+${[['Taches','fa-list-check',a.tasks,a.color],['Efficacite','fa-bolt',a.efficiency+'%',a.color],['Actions en attente','fa-hourglass-half',a.actions.filter(x=>x.type==='validation').length,'#F59E0B'],['Alertes','fa-triangle-exclamation',a.actions.filter(x=>x.type==='alert').length,'#EF4444']].map(([label,icon,value,color])=>`
+<div class="p-4 rounded-xl bg-white/[0.02] text-center">
+<i class="fa-solid ${icon} text-lg mb-2" style="color:${color};opacity:0.8"></i>
+<p class="text-xl font-bold">${value}</p>
+<p class="text-[10px] text-white/30 mt-1">${label}</p>
+</div>`).join('')}
+</div>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-6">
+<div class="glass rounded-2xl p-6">
+<h4 class="text-sm font-semibold mb-4">Actions en attente</h4>
+${a.actions.length?a.actions.map(action=>`
+<div class="p-4 rounded-xl bg-white/[0.02] border border-white/5 mb-3 log-entry">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-lg ${action.type==='validation'?'bg-gold/10':'bg-red-500/10'} flex items-center justify-center flex-shrink-0">
+<i class="fa-solid ${action.type==='validation'?'fa-check-double':'fa-triangle-exclamation'} text-xs ${action.type==='validation'?'text-gold':'text-red-400'}"></i>
+</div>
+<div class="flex-1">
+<p class="text-xs text-white/70 leading-relaxed mb-2">${action.text}</p>
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-white/30">${action.time}</span>
+<span class="text-[10px] px-1.5 py-0.5 rounded ${action.priority==='high'?'bg-red-500/10 text-red-400':'bg-yellow-500/10 text-yellow-400'}">${action.priority==='high'?'Haute':'Moyenne'}</span>
+</div>
+</div>
+</div>
+<div class="flex gap-2 mt-3 pl-11">
+<button onclick="validateAction('${a.id}','${action.text}')" class="flex-1 py-2 rounded-lg bg-gold/10 hover:bg-gold/20 text-gold text-xs font-semibold transition-all border border-gold/20">Valider</button>
+<button onclick="rejectAction('${a.id}','${action.text}')" class="flex-1 py-2 rounded-lg bg-white/5 hover:bg-red-500/10 text-white/50 hover:text-red-400 text-xs font-semibold transition-all border border-white/5">Rejeter</button>
+</div>
+</div>`).join(''):`<p class="text-xs text-white/30 text-center py-8">Aucune action en attente</p>`}
+</div>
+
+<div class="glass rounded-2xl p-6">
+<h4 class="text-sm font-semibold mb-4">Journal d'activite</h4>
+<div class="space-y-3">
+${[['14:30','Validation du transfert B2C #1245','success'],['14:25','Alerte: Taux conversion B2B en baisse','warning'],['14:15','Mise a jour des parametres VoIP','info'],['14:00','Demarrage du shift','success'],['13:45','Analyse des leads en attente','info']].map(([time,msg,type])=>`
+<div class="flex items-center gap-3 text-xs log-entry">
+<span class="text-white/30 font-mono text-[10px]">${time}</span>
+<div class="w-1.5 h-1.5 rounded-full ${type==='success'?'bg-green-400':type==='warning'?'bg-yellow-400':'bg-blue-400'}"></div>
+<span class="text-white/60">${msg}</span>
+</div>`).join('')}
+</div>
+</div>
+</div>
+</div>`}
+</div>`;}
+
+function renderActionsView(){return`
+<div class="space-y-6 slide-in">
+<div>
+<h2 class="text-xl font-bold">Actions a Valider</h2>
+<p class="text-sm text-white/40 mt-0.5">Toutes les actions necessitant une intervention humaine</p>
+</div>
+<div class="space-y-4">
+${AGENTS.filter(a=>a.actions.length>0).map(a=>a.actions.map(action=>`
+<div class="glass rounded-2xl p-5 card-hover log-entry">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style="background:${a.color}15">
+<i class="fa-solid ${a.icon}" style="color:${a.color}"></i>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-sm font-semibold">${a.name}</span>
+<span class="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/40">${a.role}</span>
+</div>
+<p class="text-sm text-white/70 leading-relaxed mb-3">${action.text}</p>
+<div class="flex items-center gap-3 mb-4">
+<span class="text-[10px] text-white/30"><i class="fa-regular fa-clock mr-1"></i>${action.time}</span>
+<span class="text-[10px] px-2 py-0.5 rounded-full ${action.priority==='high'?'bg-red-500/10 text-red-400 border border-red-500/20':'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'}">${action.priority==='high'?'Priorite Haute':'Priorite Moyenne'}</span>
+</div>
+<div class="flex gap-3">
+<button onclick="validateAction('${a.id}','${action.text}')" class="px-6 py-2.5 rounded-xl bg-gold/10 hover:bg-gold/20 text-gold text-sm font-semibold transition-all border border-gold/20 flex items-center gap-2">
+<i class="fa-solid fa-check"></i>Valider
+</button>
+<button onclick="rejectAction('${a.id}','${action.text}')" class="px-6 py-2.5 rounded-xl bg-white/5 hover:bg-red-500/10 text-white/50 hover:text-red-400 text-sm font-semibold transition-all border border-white/5 flex items-center gap-2">
+<i class="fa-solid fa-xmark"></i>Rejeter
+</button>
+<button onclick="showToast('Action deleguee a '+agents.find(x=>x.id==='${a.id}').name,'info')" class="px-6 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 text-sm font-semibold transition-all border border-white/5 flex items-center gap-2">
+<i class="fa-solid fa-user-clock"></i>Deleguer
+</button>
+</div>
+</div>
+</div>
+</div>`).join('')).join('')||`<div class="text-center py-16"><i class="fa-solid fa-clipboard-check text-4xl text-white/10 mb-4"></i><p class="text-white/30">Aucune action en attente</p></div>`}
+</div>
+</div>`;}
+
+function renderSettingsView(){return`
+<div class="space-y-6 slide-in max-w-2xl">
+<div>
+<h2 class="text-xl font-bold">Parametres</h2>
+<p class="text-sm text-white/40 mt-0.5">Configuration de la console de pilotage</p>
+</div>
+<div class="glass rounded-2xl p-6 space-y-6">
+<div>
+<h3 class="text-sm font-semibold mb-4">Notifications</h3>
+<div class="space-y-3">
+${[['Alertes critiques','Recevoir une notification pour chaque alerte critique','true'],['Actions en attente','Notification quand une action necessite validation','true'],['Rapports quotidiens','Resume quotidien des performances','false']].map(([label,desc,enabled])=>`
+<div class="flex items-center justify-between p-3 rounded-xl bg-white/[0.02]">
+<div>
+<p class="text-sm font-medium">${label}</p>
+<p class="text-[11px] text-white/40">${desc}</p>
+</div>
+<button class="relative w-11 h-6 rounded-full transition-all ${enabled==='true'?'bg-gold/20':'bg-white/5'}" style="border:1px solid ${enabled==='true'?'rgba(212,168,83,0.3)':'rgba(255,255,255,0.1)'}">
+<div class="absolute top-0.5 ${enabled==='true'?'left-6':'left-0.5'} w-5 h-5 rounded-full bg-gold transition-all"></div>
+</button>
+</div>`).join('')}
+</div>
+</div>
+<div class="h-px bg-white/5"></div>
+<div>
+<h3 class="text-sm font-semibold mb-4">Seuils d'alerte</h3>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-xs mb-2"><span class="text-white/50">Taux de conversion minimum</span><span class="text-gold font-semibold">20%</span></div>
+<div class="h-2 bg-white/5 rounded-full"><div class="h-full w-1/5 bg-gold rounded-full"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-xs mb-2"><span class="text-white/50">Temps de reponse max</span><span class="text-gold font-semibold">5 min</span></div>
+<div class="h-2 bg-white/5 rounded-full"><div class="h-full w-3/5 bg-gold rounded-full"></div></div>
+</div>
+<div>
+<div class="flex justify-between text-xs mb-2"><span class="text-white/50">File d'attente max</span><span class="text-gold font-semibold">30 leads</span></div>
+<div class="h-2 bg-white/5 rounded-full"><div class="h-full w-3/4 bg-gold rounded-full"></div></div>
+</div>
+</div>
+</div>
+<div class="h-px bg-white/5"></div>
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-medium text-red-400">Mode Maintenance</p>
+<p class="text-[11px] text-white/40">Desactiver temporairement tous les agents</p>
+</div>
+<button onclick="toggleMaintenance()" class="px-4 py-2 rounded-lg text-xs font-semibold ${maintenanceMode?'bg-red-500/20 text-red-400 border border-red-500/30':'bg-white/5 text-white/60 border border-white/5'}">
+${maintenanceMode?'Desactiver':'Activer'}
+</button>
+</div>
+</div>
+</div>`;}
+
+function showToast(message,type='info'){const container=document.getElementById('toast-container');const toast=document.createElement('div');toast.className='toast-enter flex items-center gap-3 px-4 py-3 rounded-xl glass border border-white/10 shadow-xl max-w-sm';toast.innerHTML=`<div class="w-8 h-8 rounded-lg ${type==='success'?'bg-green-500/10':type==='error'?'bg-red-500/10':'bg-gold/10'} flex items-center justify-center flex-shrink-0"><i class="fa-solid ${type==='success'?'fa-check':type==='error'?'fa-xmark':'fa-info'} text-xs ${type==='success'?'text-green-400':type==='error'?'text-red-400':'text-gold'}"></i></div><p class="text-xs font-medium text-white/80">${message}</p>`;container.appendChild(toast);setTimeout(()=>{toast.classList.remove('toast-enter');toast.classList.add('toast-exit');setTimeout(()=>toast.remove(),300)},4000);}
+
+function setView(view){currentView=view;renderApp();}
+function selectAgent(id){selectedAgent=id;setView('supervision');}
+
+function toggleAgent(id){const a=AGENTS.find(x=>x.id===id);if(a){a.status=a.status==='online'?'offline':'online';showToast(`${a.name} ${a.status==='online'?'active':'desactive'}`,a.status==='online'?'success':'info');renderApp();}}
+
+function validateAction(agentId,actionText){showToast('Action validee avec succes','success');const a=AGENTS.find(x=>x.id===agentId);if(a)a.actions=a.actions.filter(x=>x.text!==actionText);renderApp();}
+function rejectAction(agentId,actionText){showToast('Action rejetee','error');const a=AGENTS.find(x=>x.id===agentId);if(a)a.actions=a.actions.filter(x=>x.text!==actionText);renderApp();}
+
+function toggleMaintenance(){maintenanceMode=!maintenanceMode;if(maintenanceMode){AGENTS.forEach(a=>a.status='offline');showToast('Mode maintenance active — Tous les agents sont arretes','error');}else{AGENTS.forEach(a=>a.status='online');showToast('Mode maintenance desactive — Agents reactives','success');}renderApp();}
+
+renderApp();
+</script></body></html>
