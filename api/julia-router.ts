@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createRouter, publicQuery, authedQuery } from "./middleware";
+import { createRouter, publicQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { dossiers, dossierDocuments } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -45,7 +45,7 @@ export const juliaRouter = createRouter({
     }),
 
   // ─── Ajouter un document ───
-  addDocument: authedQuery
+  addDocument: publicQuery
     .input(z.object({
       dossierId: z.number().int().positive(),
       type: z.string(),
@@ -66,7 +66,7 @@ export const juliaRouter = createRouter({
     }),
 
   // ─── Valider un document ───
-  validateDocument: authedQuery
+  validateDocument: publicQuery
     .input(z.object({
       documentId: z.number().int().positive(),
       status: z.enum(["valide", "rejete", "en_attente"]),
