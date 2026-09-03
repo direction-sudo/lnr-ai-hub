@@ -5,6 +5,9 @@ import { socialRouter } from "./social-router";
 import { iftttRouter } from "./ifttt-router";
 import { adminRouter } from "./admin-router";
 import { rhRouter } from "./rh-router";
+import { patrimoineRouter } from "./patrimoine-router";
+import { juliaRouter } from "./julia-router";
+import { manueRouter } from "./manue-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -16,6 +19,9 @@ export const appRouter = createRouter({
   ifttt: iftttRouter,
   admin: adminRouter,
   rh: rhRouter,
+  patrimoine: patrimoineRouter,
+  julia: juliaRouter,
+  manue: manueRouter,
 });
 
 export type AppRouter = typeof appRouter;
