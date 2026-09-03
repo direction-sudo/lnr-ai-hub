@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createRouter, publicQuery, authedQuery } from "./middleware";
+import { createRouter, publicQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { appointments, dossiers, dossierDocuments } from "@db/schema";
 import { eq, desc, and, sql, gte, lte } from "drizzle-orm";
@@ -85,7 +85,7 @@ function calculateScore(input: z.infer<typeof QualificationInput>) {
 
 export const patrimoineRouter = createRouter({
   // ─── Qualifier un lead ───
-  qualifier: authedQuery
+  qualifier: publicQuery
     .input(QualificationInput)
     .mutation(async ({ input }) => {
       const scoring = calculateScore(input);
@@ -119,7 +119,7 @@ export const patrimoineRouter = createRouter({
     }),
 
   // ─── Créer un RDV ───
-  rdvCreate: authedQuery
+  rdvCreate: publicQuery
     .input(RdvInput)
     .mutation(async ({ input }) => {
       const db = getDb();
@@ -136,7 +136,7 @@ export const patrimoineRouter = createRouter({
     }),
 
   // ─── Mettre à jour un RDV ───
-  rdvUpdate: authedQuery
+  rdvUpdate: publicQuery
     .input(z.object({ id: z.number().int().positive(), status: z.enum(["planifie", "confirme", "annule", "reporte", "realise"]), notes: z.string().optional() }))
     .mutation(async ({ input }) => {
       const db = getDb();
@@ -148,7 +148,7 @@ export const patrimoineRouter = createRouter({
     }),
 
   // ─── Créer un dossier ───
-  dossierCreate: authedQuery
+  dossierCreate: publicQuery
     .input(z.object({ leadId: z.string().uuid(), appointmentId: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const db = getDb();
