@@ -1,0 +1,543 @@
+{
+  "info": {
+    "_postman_id": "fides-phase2-2026",
+    "name": "FIDES CONSEIL — Phase 2 API Tests",
+    "description": "Collection de tests pour les routers tRPC Phase 2 (Agent 7 Patrimoine, Agent 8 Julia, Agent 9 Manue)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🟢 HEALTH CHECK",
+      "item": [
+        {
+          "name": "Ping API",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trpc/ping",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "ping"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🏛️ AGENT 7 — PATRIMOINE",
+      "item": [
+        {
+          "name": "Qualifier un lead (scoring 0-100)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leadId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"source\": \"landing_page\",\n  \"revenusAnnuels\": 85000,\n  \"patrimoineEstime\": 450000,\n  \"besoins\": [\n    \"retraite\",\n    \"prevoyance\",\n    \"epargne\"\n  ],\n  \"urgence\": \"3_mois\",\n  \"situationFamiliale\": \"marie\",\n  \"age\": 52,\n  \"notesAgent\": \"Lead chaud depuis landing page mutuelle senior\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/trpc/patrimoine.qualifier",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "patrimoine.qualifier"
+              ]
+            },
+            "description": "Attendu : scoreGlobal 60-80, segment 'standard' ou 'premium'"
+          },
+          "response": []
+        },
+        {
+          "name": "Qualifier lead non qualifié (score bas)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leadId\": \"550e8400-e29b-41d4-a716-446655440001\",\n  \"source\": \"webhook_pipedrive\",\n  \"besoins\": [\n    \"mutuelle\"\n  ],\n  \"urgence\": \"1_an\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/trpc/patrimoine.qualifier",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "patrimoine.qualifier"
+              ]
+            },
+            "description": "Attendu : scoreGlobal < 40, segment 'non_qualifie'"
+          },
+          "response": []
+        },
+        {
+          "name": "Liste créneaux calendrier",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trpc/patrimoine.calendrierList?input={\"dateFrom\":\"2026-09-04T00:00:00Z\",\"dateTo\":\"2026-09-10T23:59:59Z\"}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "patrimoine.calendrierList"
+              ],
+              "query": [
+                {
+                  "key": "input",
+                  "value": "{\"dateFrom\":\"2026-09-04T00:00:00Z\",\"dateTo\":\"2026-09-10T23:59:59Z\"}"
+                }
+              ]
+            },
+            "description": "Attendu : tableau de créneaux ou tableau vide"
+          },
+          "response": []
+        },
+        {
+          "name": "Créer un RDV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leadId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"qualificationId\": \"qual-123-uuid\",\n  \"date\": \"2026-09-05T14:00:00Z\",\n  \"dureeMinutes\": 30,\n  \"type\": \"telephone\",\n  \"notes\": \"RDV qualification mutuelle senior \\u2014 scoring 72\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/trpc/patrimoine.rdvCreate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "patrimoine.rdvCreate"
+              ]
+            },
+            "description": "Attendu : objet Appointment créé avec status 'planifie'"
+          },
+          "response": []
+        },
+        {
+          "name": "Confirmer un RDV",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"status\": \"confirme\",\n  \"notes\": \"Client a confirm\\u00e9 par SMS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/trpc/patrimoine.rdvUpdate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "patrimoine.rdvUpdate"
+              ]
+            },
+            "description": "Attendu : RDV mis à jour avec status 'confirme'"
+          },
+          "response": []
+        },
+        {
+          "name": "Créer un dossier client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leadId\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"appointmentId\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/trpc/patrimoine.dossierCreate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "patrimoine.dossierCreate"
+              ]
+            },
+            "description": "Attendu : Dossier créé avec status 'en_cours'"
+          },
+          "response": []
+        },
+        {
+          "name": "Récupérer un dossier",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trpc/patrimoine.dossierGet?input={\"id\":1}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "patrimoine.dossierGet"
+              ],
+              "query": [
+                {
+                  "key": "input",
+                  "value": "{\"id\":1}"
+                }
+              ]
+            },
+            "description": "Attendu : objet dossier + liste documents"
+          },
+          "response": []
+        },
+        {
+          "name": "Stats patrimoine (30j)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trpc/patrimoine.stats?input={\"periode\":\"30j\"}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "patrimoine.stats"
+              ],
+              "query": [
+                {
+                  "key": "input",
+                  "value": "{\"periode\":\"30j\"}"
+                }
+              ]
+            },
+            "description": "Attendu : KPIs mockés (tauxConversion, scoreMoyen, etc.)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📋 AGENT 8 — JULIA (Conformité)",
+      "item": [
+        {
+          "name": "Checklist KYC/AML d'un dossier",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trpc/julia.checklist?input={\"dossierId\":1}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "julia.checklist"
+              ],
+              "query": [
+                {
+                  "key": "input",
+                  "value": "{\"dossierId\":1}"
+                }
+              ]
+            },
+            "description": "Attendu : checklist 7 items + tauxConformite + statut (vert/orange/rouge)"
+          },
+          "response": []
+        },
+        {
+          "name": "Ajouter un document KYC",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dossierId\": 1,\n  \"type\": \"kyc_id\",\n  \"url\": \"https://storage.fides-conseil.fr/docs/piece-id-dupont.pdf\",\n  \"nom\": \"Pi\\u00e8ce d'identit\\u00e9 \\u2014 Mme Dupont\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/trpc/julia.addDocument",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "julia.addDocument"
+              ]
+            },
+            "description": "Attendu : document créé avec status 'en_attente'"
+          },
+          "response": []
+        },
+        {
+          "name": "Valider un document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentId\": 1,\n  \"status\": \"valide\",\n  \"commentaire\": \"Pi\\u00e8ce d'identit\\u00e9 conforme \\u2014 expiration 2028\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/trpc/julia.validateDocument",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "julia.validateDocument"
+              ]
+            },
+            "description": "Attendu : document mis à jour avec status 'valide' + validatedAt"
+          },
+          "response": []
+        },
+        {
+          "name": "Rejeter un document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentId\": 2,\n  \"status\": \"rejete\",\n  \"commentaire\": \"RIB incomplet \\u2014 manque le code banque\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/trpc/julia.validateDocument",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "julia.validateDocument"
+              ]
+            },
+            "description": "Attendu : document mis à jour avec status 'rejete'"
+          },
+          "response": []
+        },
+        {
+          "name": "Alertes dossiers incomplets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trpc/julia.alertes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "julia.alertes"
+              ]
+            },
+            "description": "Attendu : liste des dossiers 'en_cours' sans completedAt"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👁️ AGENT 9 — MANUE (Supervision)",
+      "item": [
+        {
+          "name": "État du plateau temps réel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trpc/manue.teamStatus",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "manue.teamStatus"
+              ]
+            },
+            "description": "Attendu : liste des télévendeurs avec statut, appels, conversion"
+          },
+          "response": []
+        },
+        {
+          "name": "Performance individuelle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trpc/manue.performance?input={\"televendeurId\":\"550e8400-e29b-41d4-a716-446655440010\"}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "manue.performance"
+              ],
+              "query": [
+                {
+                  "key": "input",
+                  "value": "{\"televendeurId\":\"550e8400-e29b-41d4-a716-446655440010\"}"
+                }
+              ]
+            },
+            "description": "Attendu : KPIs individuels (tauxDecroche, dureeMoyenne, rdvPris)"
+          },
+          "response": []
+        },
+        {
+          "name": "Créer une alerte (taux conversion bas)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"conversion_bas\",\n  \"televendeurId\": \"550e8400-e29b-41d4-a716-446655440010\",\n  \"seuil\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/trpc/manue.alerte",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "manue.alerte"
+              ]
+            },
+            "description": "Attendu : alerte créée avec priorite 'haute'"
+          },
+          "response": []
+        },
+        {
+          "name": "Créer une alerte (absence)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"absence\",\n  \"televendeurId\": \"550e8400-e29b-41d4-a716-446655440010\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/trpc/manue.alerte",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "manue.alerte"
+              ]
+            },
+            "description": "Attendu : alerte créée avec priorite 'critique'"
+          },
+          "response": []
+        },
+        {
+          "name": "Coaching automatisé",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/trpc/manue.coaching?input={\"televendeurId\":\"550e8400-e29b-41d4-a716-446655440010\"}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "trpc",
+                "manue.coaching"
+              ],
+              "query": [
+                {
+                  "key": "input",
+                  "value": "{\"televendeurId\":\"550e8400-e29b-41d4-a716-446655440010\"}"
+                }
+              ]
+            },
+            "description": "Attendu : liste de recommandations personnalisées"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://lnr-ai-hub.onrender.com",
+      "type": "string",
+      "description": "URL de base du backend LNR AI Hub"
+    }
+  ]
+}
