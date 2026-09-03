@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createRouter, publicQuery, authedQuery } from "./middleware";
+import { createRouter, publicQuery, publicQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { televendeurs, callRecords } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
@@ -50,7 +50,7 @@ export const manueRouter = createRouter({
     }),
 
   // ─── Alerte automatique ───
-  alerte: authedQuery
+  alerte: publicQuery
     .input(z.object({
       type: z.enum(["appels_bas", "conversion_bas", "absence", "file_attente"]),
       televendeurId: z.string().uuid().optional(),
