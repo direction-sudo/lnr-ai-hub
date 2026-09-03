@@ -1,12 +1,10 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "./middleware";
-import { getDb } from "./queries/connection";
 
 export const charlyRouter = createRouter({
   rapportQuotidien: publicQuery
-    .input(z.object({ date: z.string().datetime().optional() }))
-    .query(async ({ input }) => {
-      const today = input.date ? new Date(input.date) : new Date();
+    .query(async () => {
+      const today = new Date();
       return {
         date: today.toISOString(),
         presence: { presents: 7, absents: 0, retards: 1 },
