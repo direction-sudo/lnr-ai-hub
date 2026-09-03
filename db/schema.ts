@@ -189,3 +189,74 @@ export const hrMetrics = sqliteTable("hr_metrics", {
   unit: text("unit").default("count"), // count, percentage, days, euros
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
+
+
+// ═══════════════════════════════════════════════════════════════
+// FIDES CONSEIL MODULE — Tables pour le CRM et le call center
+// ═══════════════════════════════════════════════════════════════
+
+// ─── Appointments (Rendez-vous) ───
+export const appointments = sqliteTable("appointments", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  leadId: text("lead_id").notNull(),
+  date: integer("date", { mode: "timestamp" }).notNull(),
+  duration: integer("duration").default(30), // minutes
+  type: text("type", { enum: ["visio", "telephone", "physique"] }).default("telephone"),
+  agentId: text("agent_id"),
+  notes: text("notes"),
+  status: text("status", { enum: ["planifie", "confirme", "annule", "reporte", "realise"] }).default("planifie"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+// ─── Dossiers (Dossiers clients) ───
+export const dossiers = sqliteTable("dossiers", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  leadId: text("lead_id").notNull(),
+  appointmentId: integer("appointment_id", { mode: "number" }),
+  status: text("status", { enum: ["en_cours", "complet", "archive"] }).default("en_cours"),
+  completedAt: integer("completed_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+// ─── Dossier Documents ───
+export const dossierDocuments = sqliteTable("dossier_documents", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  dossierId: integer("dossier_id", { mode: "number" }).notNull(),
+  type: text("type").notNull(), // kyc_id, kyc_rib, aml_source, etc.
+  nom: text("nom").notNull(),
+  url: text("url").notNull(),
+  status: text("status", { enum: ["en_attente", "valide", "rejete"] }).default("en_attente"),
+  commentaire: text("commentaire"),
+  uploadedAt: integer("uploaded_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  validatedAt: integer("validated_at", { mode: "timestamp" }),
+});
+
+// ─── Televendeurs ───
+export const televendeurs = sqliteTable("televendeurs", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email"),
+  status: text("status", { enum: ["online", "offline", "en_appel", "pause"] }).default("offline"),
+  callsToday: integer("calls_today").default(0),
+  avgCallDuration: integer("avg_call_duration").default(0),
+  conversionRate: integer("conversion_rate").default(0),
+  lastActivityAt: integer("last_activity_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+// ─── Call Records ───
+export const callRecords = sqliteTable("call_records", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  televendeurId: text("televendeur_id").notNull(),
+  leadId: text("lead_id"),
+  direction: text("direction", { enum: ["inbound", "outbound"] }).default("outbound"),
+  status: text("status", { enum: ["answered", "missed", "ongoing", "voicemail"] }).default("answered"),
+  duration: integer("duration").default(0), // secondes
+  recordingUrl: text("recording_url"),
+  rdvBooked: integer("rdv_booked", { mode: "boolean" }).default(false),
+  notes: text("notes"),
+  startedAt: integer("started_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  endedAt: integer("ended_at", { mode: "timestamp" }),
+});
