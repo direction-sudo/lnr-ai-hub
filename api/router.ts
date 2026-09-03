@@ -8,6 +8,13 @@ import { rhRouter } from "./rh-router";
 import { patrimoineRouter } from "./patrimoine-router";
 import { juliaRouter } from "./julia-router";
 import { manueRouter } from "./manue-router";
+import { charlyRouter } from "./charly-router";
+import { samRouter } from "./sam-router";
+import { tomRouter } from "./tom-router";
+import { ronyRouter } from "./rony-router";
+import { johnRouter } from "./john-router";
+import { louRouter } from "./lou-router";
+import { noraRouter } from "./nora-router";
 import { createRouter, publicQuery } from "./middleware";
 
 export const appRouter = createRouter({
@@ -22,6 +29,13 @@ export const appRouter = createRouter({
   patrimoine: patrimoineRouter,
   julia: juliaRouter,
   manue: manueRouter,
+  charly: charlyRouter,
+  sam: samRouter,
+  tom: tomRouter,
+  rony: ronyRouter,
+  john: johnRouter,
+  lou: louRouter,
+  nora: noraRouter,
 });
 
 export type AppRouter = typeof appRouter;
