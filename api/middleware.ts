@@ -9,10 +9,17 @@ const t = initTRPC.context<TrpcContext>().create({
 });
 
 export const createRouter = t.router;
-export const publicQuery = t.procedure.use(requireAuthOrApiKey);
+
+// ─── Strict auth — requires a logged-in user ───
+export const publicQuery = t.procedure.use(requireAuth);
+
+// ─── No auth at all — for ping, OAuth callbacks, etc. ───
 export const publicNoAuth = t.procedure;
 
-// ─── Auth middleware ───
+// ─── Auth or API Key — allows server-to-server calls with Kimi API key ───
+export const apiKeyQuery = t.procedure.use(requireAuthOrApiKey);
+
+// ─── Auth middleware (strict user session) ───
 const requireAuth = t.middleware(async (opts) => {
   const { ctx, next } = opts;
 
@@ -26,16 +33,14 @@ const requireAuth = t.middleware(async (opts) => {
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
 
-// ─── Auth or API Key middleware (allows access with Kimi API key even without user auth) ───
+// ─── Auth or API Key middleware ───
 const requireAuthOrApiKey = t.middleware(async (opts) => {
   const { ctx, next } = opts;
 
-  // If user is authenticated, allow
   if (ctx.user) {
     return next({ ctx: { ...ctx, user: ctx.user } });
   }
 
-  // If Kimi API key is configured, allow with a system user context
   if (env.kimiApiKey) {
     return next({
       ctx: {
