@@ -6,7 +6,7 @@ import { eq, desc } from "drizzle-orm";
 
 export const manueRouter = createRouter({
   // ─── État du plateau temps réel ───
-  teamStatus: publicQuery
+  teamStatus: authedQuery
     .query(async () => {
       const db = getDb();
       const team = await db.select().from(televendeurs).orderBy(desc(televendeurs.lastActivityAt));
@@ -22,7 +22,7 @@ export const manueRouter = createRouter({
     }),
 
   // ─── Performance individuelle ───
-  performance: publicQuery
+  performance: authedQuery
     .input(z.object({ televendeurId: z.string().uuid() }))
     .query(async ({ input }) => {
       const db = getDb();
@@ -50,7 +50,7 @@ export const manueRouter = createRouter({
     }),
 
   // ─── Alerte automatique ───
-  alerte: publicQuery
+  alerte: authedQuery
     .input(z.object({
       type: z.enum(["appels_bas", "conversion_bas", "absence", "file_attente"]),
       televendeurId: z.string().uuid().optional(),
@@ -76,7 +76,7 @@ export const manueRouter = createRouter({
     }),
 
   // ─── Coaching automatisé ───
-  coaching: publicQuery
+  coaching: authedQuery
     .input(z.object({ televendeurId: z.string().uuid() }))
     .query(async ({ input }) => {
       const db = getDb();
