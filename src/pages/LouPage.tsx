@@ -45,13 +45,11 @@ export default function LouPage() {
         {TABS.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
+          const activeClass = 'bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.12)]';
+          const inactiveClass = 'text-[#52525B] hover:text-[#A1A1AA] hover:bg-[rgba(255,255,255,0.02)]';
           return (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                isActive
-                  ? 'bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.12)]'
-                  : 'text-[#52525B] hover:text-[#A1A1AA] hover:bg-[rgba(255,255,255,0.02)]'
-              }`}>
+              className={"flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 " + (isActive ? activeClass : inactiveClass)}>
               <Icon size={15} /> {tab.label}
             </button>
           );
@@ -90,6 +88,9 @@ function GenerateurTab() {
     }
   };
 
+  const activeBtn = 'bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.2)]';
+  const inactiveBtn = 'bg-[#0d0d0f] text-[#52525B] border border-white/[0.06] hover:text-[#A1A1AA]';
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="glass-card p-6">
@@ -116,11 +117,7 @@ function GenerateurTab() {
               <div className="flex gap-2">
                 {(['B2C', 'B2B', 'mixte'] as const).map(opt => (
                   <button key={opt} type="button" onClick={() => setCible(opt)}
-                    className={`flex-1 h-10 rounded-xl text-xs font-medium transition-all ${
-                      cible === opt
-                        ? 'bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.2)]'
-                        : 'bg-[#0d0d0f] text-[#52525B] border border-white/[0.06] hover:text-[#A1A1AA]'
-                    }`}>
+                    className={"flex-1 h-10 rounded-xl text-xs font-medium transition-all " + (cible === opt ? activeBtn : inactiveBtn)}>
                     <Users size={13} className="inline mr-1" />{opt}
                   </button>
                 ))}
@@ -166,7 +163,7 @@ function GenerateurTab() {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `${generer.data.motCle.replace(/\s+/g, '-')}.html`;
+                a.download = generer.data.motCle.replace(/\s+/g, '-') + '.html';
                 a.click();
               }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[rgba(212,168,83,0.06)] border border-[rgba(212,168,83,0.1)] text-xs text-[#D4A853] hover:bg-[rgba(212,168,83,0.1)] transition-all">
@@ -213,10 +210,7 @@ function GenerateurTab() {
 
 function AuditTab() {
   const [url, setUrl] = useState('');
-  const audit = trpc.lou.auditerSite.useQuery(
-    { url },
-    { enabled: false }
-  );
+  const audit = trpc.lou.auditerSite.useQuery({ url }, { enabled: false });
 
   const handleAudit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,10 +258,10 @@ function AuditTab() {
             <p className="text-[10px] text-[#52525B] uppercase tracking-wider">Erreurs détectées ({audit.data.erreurs.length})</p>
             {audit.data.erreurs.map((err, i) => (
               <div key={i} className="flex items-start gap-3 bg-[#0d0d0f] rounded-xl p-3 border border-white/[0.04]">
-                <AlertTriangle size={16} className={`flex-shrink-0 mt-0.5 ${
+                <AlertTriangle size={16} className={"flex-shrink-0 mt-0.5 " + (
                   err.gravite === 'haute' ? 'text-[#e74c3c]' :
                   err.gravite === 'moyenne' ? 'text-[#f39c12]' : 'text-[#3498db]'
-                }`} />
+                )} />
                 <div>
                   <p className="text-xs font-medium text-[#FAFAFA] capitalize">{err.type}</p>
                   <p className="text-xs text-[#71717A]">{err.message}</p>
@@ -294,10 +288,7 @@ function AuditTab() {
 
 function PositionnementTab() {
   const [motCle, setMotCle] = useState('');
-  const position = trpc.lou.positionnement.useQuery(
-    { motCle },
-    { enabled: false }
-  );
+  const position = trpc.lou.positionnement.useQuery({ motCle }, { enabled: false });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -389,7 +380,7 @@ function BatchTab() {
             </label>
             <textarea value={motsCles}
               onChange={e => setMotsCles(e.target.value)}
-              placeholder={`mutuelle santé senior\nassurance vie\nprêt immobilier\n...`}
+              placeholder="mutuelle santé senior\nassurance vie\nprêt immobilier\n..."
               rows={6}
               className="w-full bg-[#0d0d0f] border border-white/[0.06] rounded-xl p-4 text-sm text-[#FAFAFA] placeholder:text-[#3F3F46] focus:outline-none focus:border-[#D4A853]/30 transition-all resize-none font-mono" />
             <p className="text-[10px] text-[#3F3F46] mt-1">
