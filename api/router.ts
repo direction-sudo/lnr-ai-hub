@@ -15,10 +15,10 @@ import { ronyRouter } from "./rony-router";
 import { johnRouter } from "./john-router";
 import { louRouter } from "./lou-router";
 import { noraRouter } from "./nora-router";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, publicNoAuth } from "./middleware";
 
 export const appRouter = createRouter({
-  ping: publicQuery.query(() => ({ ok: true, ts: Date.now() })),
+  ping: publicNoAuth.query(() => ({ ok: true, ts: Date.now() })),
   auth: authRouter,
   chat: chatRouter,
   agent: agentRouter,
