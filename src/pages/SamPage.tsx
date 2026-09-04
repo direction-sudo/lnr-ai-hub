@@ -44,13 +44,11 @@ export default function SamPage() {
         {TABS.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
+          const activeClass = 'bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.12)]';
+          const inactiveClass = 'text-[#52525B] hover:text-[#A1A1AA] hover:bg-[rgba(255,255,255,0.02)]';
           return (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                isActive
-                  ? 'bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.12)]'
-                  : 'text-[#52525B] hover:text-[#A1A1AA] hover:bg-[rgba(255,255,255,0.02)]'
-              }`}>
+              className={"flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 " + (isActive ? activeClass : inactiveClass)}>
               <Icon size={15} /> {tab.label}
             </button>
           );
@@ -87,6 +85,9 @@ function DistribuerTab() {
     });
   };
 
+  const activeBtn = 'bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.2)]';
+  const inactiveBtn = 'bg-[#0d0d0f] text-[#52525B] border border-white/[0.06] hover:text-[#A1A1AA]';
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="glass-card p-6">
@@ -112,9 +113,9 @@ function DistribuerTab() {
                 <input type="range" min={0} max={100} value={score}
                   onChange={e => setScore(Number(e.target.value))}
                   className="flex-1 accent-[#D4A853]" />
-                <span className={`text-sm font-bold w-10 text-right ${
+                <span className={"text-sm font-bold w-10 text-right " + (
                   score >= 75 ? 'text-[#22C55E]' : score >= 40 ? 'text-[#D4A853]' : 'text-[#e74c3c]'
-                }`}>{score}</span>
+                )}>{score}</span>
               </div>
             </div>
           </div>
@@ -125,11 +126,7 @@ function DistribuerTab() {
               <div className="flex gap-2">
                 {(['B2C', 'B2B'] as const).map(opt => (
                   <button key={opt} type="button" onClick={() => setType(opt)}
-                    className={`flex-1 h-10 rounded-xl text-xs font-medium transition-all ${
-                      type === opt
-                        ? 'bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.2)]'
-                        : 'bg-[#0d0d0f] text-[#52525B] border border-white/[0.06] hover:text-[#A1A1AA]'
-                    }`}>
+                    className={"flex-1 h-10 rounded-xl text-xs font-medium transition-all " + (type === opt ? activeBtn : inactiveBtn)}>
                     {opt === 'B2C' ? 'Particulier' : 'Entreprise'}
                   </button>
                 ))}
@@ -140,11 +137,7 @@ function DistribuerTab() {
               <div className="flex gap-2">
                 {(['TN', 'FR'] as const).map(opt => (
                   <button key={opt} type="button" onClick={() => setMarche(opt)}
-                    className={`flex-1 h-10 rounded-xl text-xs font-medium transition-all ${
-                      marche === opt
-                        ? 'bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.2)]'
-                        : 'bg-[#0d0d0f] text-[#52525B] border border-white/[0.06] hover:text-[#A1A1AA]'
-                    }`}>
+                    className={"flex-1 h-10 rounded-xl text-xs font-medium transition-all " + (marche === opt ? activeBtn : inactiveBtn)}>
                     <MapPin size={12} className="inline mr-1" />
                     {opt === 'TN' ? 'Tunisie' : 'France'}
                   </button>
@@ -186,10 +179,10 @@ function DistribuerTab() {
             </div>
             <div className="bg-[#0d0d0f] rounded-xl p-4 border border-white/[0.04]">
               <p className="text-[10px] text-[#52525B] uppercase tracking-wider mb-1">Priorité</p>
-              <p className={`text-lg font-bold capitalize ${
+              <p className={"text-lg font-bold capitalize " + (
                 distribuer.data.priorite === 'haute' ? 'text-[#e74c3c]' :
                 distribuer.data.priorite === 'moyenne' ? 'text-[#D4A853]' : 'text-[#3498db]'
-              }`}>{distribuer.data.priorite}</p>
+              )}>{distribuer.data.priorite}</p>
             </div>
             <div className="bg-[#0d0d0f] rounded-xl p-4 border border-white/[0.04]">
               <p className="text-[10px] text-[#52525B] uppercase tracking-wider mb-1">Action</p>
@@ -227,11 +220,11 @@ function FileAttenteTab() {
             {fileAttente.data.map((lead, i) => (
               <div key={i} className="flex items-center justify-between bg-[#0d0d0f] rounded-xl p-4 border border-white/[0.04]">
                 <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  <div className={"w-10 h-10 rounded-xl flex items-center justify-center " + (
                     lead.priorite === 'haute' ? 'bg-[rgba(231,76,60,0.08)] border border-[rgba(231,76,60,0.15)]' :
                     lead.priorite === 'moyenne' ? 'bg-[rgba(212,168,83,0.08)] border border-[rgba(212,168,83,0.15)]' :
                     'bg-[rgba(52,152,219,0.08)] border border-[rgba(52,152,219,0.15)]'
-                  }`}>
+                  )}>
                     <Target size={16} className={
                       lead.priorite === 'haute' ? 'text-[#e74c3c]' :
                       lead.priorite === 'moyenne' ? 'text-[#D4A853]' : 'text-[#3498db]'
@@ -284,11 +277,11 @@ function StatsTab() {
         <div className="flex gap-2">
           {(['7j', '30j', '90j'] as const).map(p => (
             <button key={p} onClick={() => setPeriode(p)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={"px-3 py-1.5 rounded-lg text-xs font-medium transition-all " + (
                 periode === p
                   ? 'bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.2)]'
                   : 'bg-[#0d0d0f] text-[#52525B] border border-white/[0.06] hover:text-[#A1A1AA]'
-              }`}>
+              )}>
               {p === '7j' ? '7 jours' : p === '30j' ? '30 jours' : '90 jours'}
             </button>
           ))}
