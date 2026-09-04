@@ -9,7 +9,8 @@ const t = initTRPC.context<TrpcContext>().create({
 });
 
 export const createRouter = t.router;
-export const publicQuery = t.procedure;
+export const publicQuery = t.procedure.use(requireAuthOrApiKey);
+export const publicNoAuth = t.procedure;
 
 // ─── Auth middleware ───
 const requireAuth = t.middleware(async (opts) => {
