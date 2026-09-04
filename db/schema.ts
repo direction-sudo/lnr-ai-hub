@@ -260,3 +260,17 @@ export const callRecords = sqliteTable("call_records", {
   startedAt: integer("started_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
   endedAt: integer("ended_at", { mode: "timestamp" }),
 });
+
+
+// ─── Landing Page Leads ───
+export const leads = sqliteTable("leads", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone"),
+  company: text("company"),
+  message: text("message"),
+  source: text("source").default("landing_page"),
+  status: text("status", { enum: ["new", "contacted", "qualified", "converted", "lost"] }).default("new"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
