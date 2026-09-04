@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createRouter, publicQuery, authedQuery } from "./middleware";
+import { createRouter, authedQuery, authedQuery } from "./middleware";
 
 export const johnRouter = createRouter({
   genererPost: authedQuery
