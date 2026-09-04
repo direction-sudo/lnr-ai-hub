@@ -10,16 +10,10 @@ const t = initTRPC.context<TrpcContext>().create({
 
 export const createRouter = t.router;
 
-// ─── Strict auth — requires a logged-in user ───
-export const publicQuery = t.procedure.use(requireAuth);
+// ═══════════════════════════════════════════════════════════════
+// MIDDLEWARES — définis avant d'être utilisés
+// ═══════════════════════════════════════════════════════════════
 
-// ─── No auth at all — for ping, OAuth callbacks, etc. ───
-export const publicNoAuth = t.procedure;
-
-// ─── Auth or API Key — allows server-to-server calls with Kimi API key ───
-export const apiKeyQuery = t.procedure.use(requireAuthOrApiKey);
-
-// ─── Auth middleware (strict user session) ───
 const requireAuth = t.middleware(async (opts) => {
   const { ctx, next } = opts;
 
@@ -33,7 +27,6 @@ const requireAuth = t.middleware(async (opts) => {
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
 
-// ─── Auth or API Key middleware ───
 const requireAuthOrApiKey = t.middleware(async (opts) => {
   const { ctx, next } = opts;
 
@@ -57,7 +50,6 @@ const requireAuthOrApiKey = t.middleware(async (opts) => {
   });
 });
 
-// ─── Admin middleware ───
 const requireAdmin = t.middleware(async (opts) => {
   const { ctx, next } = opts;
 
@@ -70,6 +62,19 @@ const requireAdmin = t.middleware(async (opts) => {
 
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// PROCEDURES — utilisent les middlewares déjà définis
+// ═══════════════════════════════════════════════════════════════
+
+// Strict auth — requires a logged-in user
+export const publicQuery = t.procedure.use(requireAuth);
+
+// No auth at all — for ping, OAuth callbacks, etc.
+export const publicNoAuth = t.procedure;
+
+// Auth or API Key — allows server-to-server calls with Kimi API key
+export const apiKeyQuery = t.procedure.use(requireAuthOrApiKey);
 
 export const authedQuery = t.procedure.use(requireAuth);
 export const authedOrApiKeyQuery = t.procedure.use(requireAuthOrApiKey);
