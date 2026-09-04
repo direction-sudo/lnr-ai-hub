@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import {
+  Route, useState } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router';
 import {
   Home, Bot, MessageSquare, Plus, Search,
@@ -14,6 +15,8 @@ import IntegrationsPage from './IntegrationsPage';
 import CampaignsPage from './CampaignsPage';
 import AdminDBPage from './AdminDBPage';
 import RHPage from './RHPage';
+import LouPage from './LouPage';
+import SamPage from './SamPage';
 
 const ALL_AVATARS = [
   './images/avatar-nora.png',
@@ -34,6 +37,8 @@ function Sidebar({ mobileOpen, onClose, onOpenApiKey }: { mobileOpen: boolean; o
   const navItems = [
     { path: '/dashboard', label: 'Accueil', icon: Home },
     { path: '/dashboard/agents', label: 'Mes Agents', icon: Bot },
+    { path: '/dashboard/lou', label: 'Agent SEO (Lou)', icon: Search },
+    { path: '/dashboard/sam', label: 'Distribution (Sam)', icon: Route },
     { path: '/dashboard/rh', label: 'Espace RH', icon: Users },
     { path: '/dashboard/campaigns', label: 'Campagnes', icon: Megaphone },
     { path: '/dashboard/integrations', label: 'Intégrations', icon: Link2 },
@@ -508,6 +513,8 @@ export default function DashboardPage() {
             <Route path="/integrations" element={<IntegrationsPage />} />
             <Route path="/create" element={<CreateAgentView />} />
             <Route path="/admin/db" element={<AdminDBPage />} />
+            <Route path="/lou" element={<LouPage />} />
+            <Route path="/sam" element={<SamPage />} />
           </Routes>
         </main>
       </div>
