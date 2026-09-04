@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { dossiers, dossierDocuments } from "@db/schema";
 import { eq } from "drizzle-orm";
 
 export const juliaRouter = createRouter({
-  checklist: publicQuery
+  checklist: authedQuery
     .query(async () => {
       const db = getDb();
       const docs = await db.select().from(dossierDocuments).where(eq(dossierDocuments.dossierId, 1));
@@ -33,7 +33,7 @@ export const juliaRouter = createRouter({
       };
     }),
 
-  addDocument: publicQuery
+  addDocument: authedQuery
     .input(z.object({
       dossierId: z.number().int().positive(),
       type: z.string(),
@@ -53,7 +53,7 @@ export const juliaRouter = createRouter({
       return row;
     }),
 
-  validateDocument: publicQuery
+  validateDocument: authedQuery
     .input(z.object({
       documentId: z.number().int().positive(),
       status: z.enum(["valide", "rejete", "en_attente"]),
@@ -68,7 +68,7 @@ export const juliaRouter = createRouter({
       return row;
     }),
 
-  alertes: publicQuery
+  alertes: authedQuery
     .query(async () => {
       const db = getDb();
       const allDossiers = await db.select().from(dossiers).where(eq(dossiers.status, "en_cours"));
