@@ -1,12 +1,12 @@
-import {
-  Route, useState } from 'react';
+import { useState } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router';
 import {
   Home, Bot, MessageSquare, Plus, Search,
   Sparkles, Star, Wand2,
   Users, Instagram, PenTool, Target, BarChart3,
   Menu, ChevronRight, Link2, Key, Megaphone,
-  Database
+  Database,
+  Route as RouteIcon
 } from 'lucide-react';
 import ApiKeyModal from '@/components/ApiKeyModal';
 import { useChat } from '@/hooks/useChat';
@@ -38,7 +38,7 @@ function Sidebar({ mobileOpen, onClose, onOpenApiKey }: { mobileOpen: boolean; o
     { path: '/dashboard', label: 'Accueil', icon: Home },
     { path: '/dashboard/agents', label: 'Mes Agents', icon: Bot },
     { path: '/dashboard/lou', label: 'Agent SEO (Lou)', icon: Search },
-    { path: '/dashboard/sam', label: 'Distribution (Sam)', icon: Route },
+    { path: '/dashboard/sam', label: 'Distribution (Sam)', icon: RouteIcon },
     { path: '/dashboard/rh', label: 'Espace RH', icon: Users },
     { path: '/dashboard/campaigns', label: 'Campagnes', icon: Megaphone },
     { path: '/dashboard/integrations', label: 'Intégrations', icon: Link2 },
