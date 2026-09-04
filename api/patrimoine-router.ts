@@ -85,7 +85,7 @@ function calculateScore(input: z.infer<typeof QualificationInput>) {
 
 export const patrimoineRouter = createRouter({
   // ─── Qualifier un lead ───
-  qualifier: publicQuery
+  qualifier: authedQuery
     .input(QualificationInput)
     .mutation(async ({ input }) => {
       const scoring = calculateScore(input);
@@ -98,7 +98,7 @@ export const patrimoineRouter = createRouter({
     }),
 
   // ─── Recalculer scoring ───
-  scoring: publicQuery
+  scoring: authedQuery
     .input(z.object({ leadId: z.string().uuid() }))
     .query(async ({ input }) => {
       // En production : récupérer les données du lead en DB
@@ -106,7 +106,7 @@ export const patrimoineRouter = createRouter({
     }),
 
   // ─── Liste créneaux disponibles ───
-  calendrierList: publicQuery
+  calendrierList: authedQuery
     .input(z.object({ dateFrom: z.string().datetime(), dateTo: z.string().datetime(), agentId: z.string().uuid().optional() }))
     .query(async ({ input }) => {
       const db = getDb();
@@ -119,7 +119,7 @@ export const patrimoineRouter = createRouter({
     }),
 
   // ─── Créer un RDV ───
-  rdvCreate: publicQuery
+  rdvCreate: authedQuery
     .input(RdvInput)
     .mutation(async ({ input }) => {
       const db = getDb();
@@ -136,7 +136,7 @@ export const patrimoineRouter = createRouter({
     }),
 
   // ─── Mettre à jour un RDV ───
-  rdvUpdate: publicQuery
+  rdvUpdate: authedQuery
     .input(z.object({ id: z.number().int().positive(), status: z.enum(["planifie", "confirme", "annule", "reporte", "realise"]), notes: z.string().optional() }))
     .mutation(async ({ input }) => {
       const db = getDb();
@@ -148,7 +148,7 @@ export const patrimoineRouter = createRouter({
     }),
 
   // ─── Créer un dossier ───
-  dossierCreate: publicQuery
+  dossierCreate: authedQuery
     .input(z.object({ leadId: z.string().uuid(), appointmentId: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const db = getDb();
@@ -162,7 +162,7 @@ export const patrimoineRouter = createRouter({
     }),
 
   // ─── Récupérer un dossier ───
-  dossierGet: publicQuery
+  dossierGet: authedQuery
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ input }) => {
       const db = getDb();
@@ -172,7 +172,7 @@ export const patrimoineRouter = createRouter({
     }),
 
   // ─── Stats patrimoine ───
-  stats: publicQuery
+  stats: authedQuery
     .input(z.object({ periode: z.enum(["7j", "30j", "90j"]).default("30j") }))
     .query(async ({ input }) => {
       // En production : agrégation réelle depuis la DB
