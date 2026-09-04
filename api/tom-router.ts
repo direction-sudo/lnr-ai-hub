@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery } from "./middleware";
 
 export const tomRouter = createRouter({
-  appelEntrant: publicQuery
+  appelEntrant: authedQuery
     .input(z.object({
       numero: z.string(),
       heure: z.string().datetime(),
@@ -50,7 +50,7 @@ export const tomRouter = createRouter({
       };
     }),
 
-  transfert: publicQuery
+  transfert: authedQuery
     .input(z.object({
       appelId: z.string(),
       televendeurId: z.string(),
@@ -67,7 +67,7 @@ export const tomRouter = createRouter({
       };
     }),
 
-  statsJour: publicQuery
+  statsJour: authedQuery
     .input(z.object({ date: z.string().datetime().optional() }))
     .query(async ({ input }) => {
       return {
