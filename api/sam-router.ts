@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createRouter, publicQuery, authedQuery } from "./middleware";
+import { createRouter, authedQuery, authedQuery } from "./middleware";
 
 const TELEVENDEURS = [
   { id: "marouane", nom: "Marouane", type: "senior", marche: "FR", actif: true, charge: 0 },
