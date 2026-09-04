@@ -4,7 +4,7 @@ import {
   MessageSquare, Users, Plus, Zap, ChevronRight, Menu, X,
   Mail, Phone, Sparkles, PenTool, Calendar, Eye,
   FileText, Target, Instagram, BarChart3, TrendingUp,
-  Shield, Globe, Clock
+  Shield, Globe, Clock, Send, CheckCircle, Building2, User
 } from 'lucide-react';
 import BrainNeurons from '@/components/BrainNeurons';
 
@@ -549,6 +549,109 @@ function Footer() {
   );
 }
 
+/* ─── Lead Form Section ─── */
+function LeadFormSection() {
+  const { ref, visible } = useScrollReveal();
+  const [form, setForm] = useState({ name: '', email: '', phone: '', company: '', message: '' });
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      setSent(true);
+      setForm({ name: '', email: '', phone: '', company: '', message: '' });
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de l\'envoi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <section id="contact" className="relative py-28 px-6 overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-10"
+        style={{ background: 'radial-gradient(circle, rgba(212,168,83,0.2) 0%, transparent 60%)', filter: 'blur(100px)' }} />
+
+      <div ref={ref} className={`max-w-2xl mx-auto relative transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-4"
+            style={{ background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.2)', color: '#D4A853' }}>
+            <Mail size={11} /> <span>Contact</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#FAFAFA] mb-3" style={{ fontFamily: 'var(--font-heading)' }}>
+            Intéressé par <span className="text-[#D4A853]">Nora</span> ou <span className="text-[#D4A853]">Leo</span> ?
+          </h2>
+          <p className="text-[#71717A]">Laissez-nous vos coordonnées. Notre équipe vous recontacte sous 24h.</p>
+        </div>
+
+        {sent ? (
+          <div className="glass-card rounded-2xl p-10 text-center">
+            <CheckCircle size={48} className="text-[#22C55E] mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Demande envoyée !</h3>
+            <p className="text-[#71717A]">Nous vous recontactons très vite.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="glass-card rounded-2xl p-8 space-y-5">
+            <div className="grid sm:grid-cols-2 gap-5">
+              <div className="relative">
+                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525B]" />
+                <input required type="text" placeholder="Nom complet" value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  className="w-full bg-[#0d0d0f] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-[#FAFAFA] placeholder:text-[#3F3F46] focus:border-[#D4A853]/50 focus:outline-none transition-colors" />
+              </div>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525B]" />
+                <input required type="email" placeholder="Email professionnel" value={form.email}
+                  onChange={e => setForm({ ...form, email: e.target.value })}
+                  className="w-full bg-[#0d0d0f] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-[#FAFAFA] placeholder:text-[#3F3F46] focus:border-[#D4A853]/50 focus:outline-none transition-colors" />
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-5">
+              <div className="relative">
+                <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525B]" />
+                <input type="tel" placeholder="Téléphone" value={form.phone}
+                  onChange={e => setForm({ ...form, phone: e.target.value })}
+                  className="w-full bg-[#0d0d0f] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-[#FAFAFA] placeholder:text-[#3F3F46] focus:border-[#D4A853]/50 focus:outline-none transition-colors" />
+              </div>
+              <div className="relative">
+                <Building2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#52525B]" />
+                <input type="text" placeholder="Entreprise" value={form.company}
+                  onChange={e => setForm({ ...form, company: e.target.value })}
+                  className="w-full bg-[#0d0d0f] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-[#FAFAFA] placeholder:text-[#3F3F46] focus:border-[#D4A853]/50 focus:outline-none transition-colors" />
+              </div>
+            </div>
+            <div className="relative">
+              <MessageSquare size={16} className="absolute left-3 top-3.5 text-[#52525B]" />
+              <textarea placeholder="Votre besoin (optionnel)" rows={3} value={form.message}
+                onChange={e => setForm({ ...form, message: e.target.value })}
+                className="w-full bg-[#0d0d0f] border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm text-[#FAFAFA] placeholder:text-[#3F3F46] focus:border-[#D4A853]/50 focus:outline-none transition-colors resize-none" />
+            </div>
+            {error && <p className="text-[#e74c3c] text-xs">{error}</p>}
+            <button type="submit" disabled={loading}
+              className="w-full btn-gold text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 disabled:opacity-50">
+              <span className="relative z-10 flex items-center gap-2">
+                {loading ? 'Envoi...' : <><Send size={15} /> Envoyer ma demande</>}
+              </span>
+            </button>
+            <p className="text-[10px] text-[#3F3F46] text-center">Vos données sont protégées. Pas de spam.</p>
+          </form>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function LandingPage() {
   return (
     <div className="relative z-10 grain-overlay">
@@ -559,6 +662,7 @@ export default function LandingPage() {
       <FeaturesSection />
       <DashboardPreview />
       <TemplatesSection />
+      <LeadFormSection />
       <CTASection />
       <Footer />
     </div>
