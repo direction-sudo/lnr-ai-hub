@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, authedQuery, authedQuery } from "./middleware";
 import { getDb } from "./queries/connection";
 import { televendeurs } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
 
 export const ronyRouter = createRouter({
-  pointage: publicQuery
+  pointage: authedQuery
     .input(z.object({
       televendeurId: z.string().uuid(),
       type: z.enum(["arrivee", "depart", "pause", "retour"]),
@@ -33,14 +33,14 @@ export const ronyRouter = createRouter({
       };
     }),
 
-  alertesRetard: publicQuery
+  alertesRetard: authedQuery
     .query(async () => {
       return [
         { televendeurId: "recrue-3", nom: "Recrue 3", heure: "09:22", retard: "7 min", statut: "retard" },
       ];
     }),
 
-  planning: publicQuery
+  planning: authedQuery
     .input(z.object({ semaine: z.string().optional() }))
     .query(async ({ input }) => {
       return {
@@ -53,7 +53,7 @@ export const ronyRouter = createRouter({
       };
     }),
 
-  statsPresence: publicQuery
+  statsPresence: authedQuery
     .input(z.object({ mois: z.string().optional() }))
     .query(async ({ input }) => {
       return {
