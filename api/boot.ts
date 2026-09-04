@@ -11,6 +11,8 @@ import { createOAuthCallbackHandler } from "./kimi/auth";
 import { Paths } from "@contracts/constants";
 import { readFileSync } from "fs";
 import { resolve } from "path";
+import { getDb } from "./queries/connection";
+import { leads } from "@db/schema";
 
 const app = new Hono<{ Bindings: HttpBindings }>();
 
@@ -407,6 +409,53 @@ app.post("/api/webhooks/whatsapp", async (c) => {
   const body = await c.req.json();
   console.log("[WhatsApp] Incoming webhook:", JSON.stringify(body, null, 2));
   return c.json({ status: "received" });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// LEAD CAPTURE — Landing page form
+// ═══════════════════════════════════════════════════════════════
+
+app.post("/api/lead", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { name, email, phone, company, message } = body;
+
+    if (!name || !email) {
+      return c.json({ success: false, error: "Nom et email requis" }, 400);
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return c.json({ success: false, error: "Email invalide" }, 400);
+    }
+
+    const db = getDb();
+    await db.insert(leads).values({
+      name,
+      email,
+      phone: phone || null,
+      company: company || null,
+      message: message || null,
+      source: "landing_page",
+      status: "new",
+    });
+
+    return c.json({ success: true, message: "Merci ! Votre demande a bien été enregistrée." });
+  } catch (err: any) {
+    console.error("[Lead] Error:", err);
+    return c.json({ success: false, error: err.message || "Erreur serveur" }, 500);
+  }
+});
+
+app.get("/api/leads", async (c) => {
+  try {
+    const db = getDb();
+    const allLeads = await db.select().from(leads).orderBy(leads.createdAt);
+    return c.json({ success: true, data: allLeads });
+  } catch (err: any) {
+    console.error("[Leads] Error:", err);
+    return c.json({ success: false, error: err.message }, 500);
+  }
 });
 
 // ─── Catch-all ───
