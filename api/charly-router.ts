@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery } from "./middleware";
 
 export const charlyRouter = createRouter({
-  rapportQuotidien: publicQuery
+  rapportQuotidien: authedQuery
     .query(async () => {
       const today = new Date();
       return {
@@ -16,7 +16,7 @@ export const charlyRouter = createRouter({
       };
     }),
 
-  alertesActives: publicQuery
+  alertesActives: authedQuery
     .query(async () => {
       return [
         { id: 1, type: "transfert", agent: "Tom", message: "Taux de transfert 18% — seuil 15%", priorite: "moyenne", heure: "09:15" },
@@ -24,7 +24,7 @@ export const charlyRouter = createRouter({
       ];
     }),
 
-  tableauAgents: publicQuery
+  tableauAgents: authedQuery
     .query(async () => {
       return [
         { id: "charly", nom: "Charly", statut: "online", taches: "Rapport 8h", derniereActivite: "08:00" },
@@ -40,7 +40,7 @@ export const charlyRouter = createRouter({
       ];
     }),
 
-  kpiTempsReel: publicQuery
+  kpiTempsReel: authedQuery
     .query(async () => {
       return {
         timestamp: new Date().toISOString(),
