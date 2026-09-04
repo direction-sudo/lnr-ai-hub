@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery } from "./middleware";
 
 const TELEVENDEURS = [
   { id: "marouane", nom: "Marouane", type: "senior", marche: "FR", actif: true, charge: 0 },
@@ -13,7 +13,7 @@ const TELEVENDEURS = [
 ];
 
 export const samRouter = createRouter({
-  distribuer: publicQuery
+  distribuer: authedQuery
     .input(z.object({
       leadId: z.string().uuid(),
       score: z.number().int().min(0).max(100),
@@ -50,7 +50,7 @@ export const samRouter = createRouter({
       };
     }),
 
-  fileAttente: publicQuery
+  fileAttente: authedQuery
     .query(async () => {
       return [
         { leadId: "lead-001", nom: "Mme Dupont", score: 72, attenteDepuis: "08:30", priorite: "moyenne" },
@@ -58,7 +58,7 @@ export const samRouter = createRouter({
       ];
     }),
 
-  reprendre: publicQuery
+  reprendre: authedQuery
     .input(z.object({ leadId: z.string().uuid(), raison: z.string().optional() }))
     .mutation(async ({ input }) => {
       return {
@@ -69,7 +69,7 @@ export const samRouter = createRouter({
       };
     }),
 
-  stats: publicQuery
+  stats: authedQuery
     .input(z.object({ periode: z.enum(["7j", "30j", "90j"]).default("30j") }))
     .query(async ({ input }) => {
       return {
