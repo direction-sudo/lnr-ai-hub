@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery } from "./middleware";
 
 export const louRouter = createRouter({
-  genererPage: publicQuery
+  genererPage: authedQuery
     .input(z.object({
       motCle: z.string().min(3),
       cible: z.enum(["B2C", "B2B", "mixte"]).default("B2C"),
@@ -50,7 +50,7 @@ export const louRouter = createRouter({
       };
     }),
 
-  auditerSite: publicQuery
+  auditerSite: authedQuery
     .input(z.object({ url: z.string().url() }))
     .query(async ({ input }) => {
       return {
@@ -69,7 +69,7 @@ export const louRouter = createRouter({
       };
     }),
 
-  positionnement: publicQuery
+  positionnement: authedQuery
     .input(z.object({ motCle: z.string() }))
     .query(async ({ input }) => {
       return {
@@ -82,7 +82,7 @@ export const louRouter = createRouter({
       };
     }),
 
-  batchGenerate: publicQuery
+  batchGenerate: authedQuery
     .input(z.object({ motsCles: z.array(z.string()).min(1).max(10) }))
     .mutation(async ({ input }) => {
       const pages = input.motsCles.map((mot, i) => ({
