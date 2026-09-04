@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery } from "./middleware";
 
 export const noraRouter = createRouter({
-  parcours: publicQuery
+  parcours: authedQuery
     .query(async () => {
       return {
         recrueId: "demo-recrue",
@@ -18,7 +18,7 @@ export const noraRouter = createRouter({
       };
     }),
 
-  quiz: publicQuery
+  quiz: authedQuery
     .input(z.object({ module: z.number().int().min(1).max(5) }))
     .query(async ({ input }) => {
       const banques: Record<number, any[]> = {
@@ -39,7 +39,7 @@ export const noraRouter = createRouter({
       };
     }),
 
-  soumettreQuiz: publicQuery
+  soumettreQuiz: authedQuery
     .input(z.object({
       recrueId: z.string().uuid(),
       module: z.number().int(),
@@ -62,7 +62,7 @@ export const noraRouter = createRouter({
       };
     }),
 
-  simulation: publicQuery
+  simulation: authedQuery
     .input(z.object({
       recrueId: z.string().uuid(),
       scenario: z.enum(["lead_chaud", "lead_froid", "reclamation", "objection_prix"]),
@@ -110,7 +110,7 @@ export const noraRouter = createRouter({
       };
     }),
 
-  majReglementaire: publicQuery
+  majReglementaire: authedQuery
     .input(z.object({
       titre: z.string(),
       contenu: z.string(),
