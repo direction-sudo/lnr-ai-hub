@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery } from "./middleware";
 
 export const johnRouter = createRouter({
-  genererPost: publicQuery
+  genererPost: authedQuery
     .input(z.object({
       sujet: z.string().min(3),
       canal: z.enum(["linkedin", "facebook", "email"]).default("linkedin"),
@@ -32,7 +32,7 @@ export const johnRouter = createRouter({
       };
     }),
 
-  programmerEmail: publicQuery
+  programmerEmail: authedQuery
     .input(z.object({
       template: z.string(),
       liste: z.array(z.string().email()),
@@ -49,7 +49,7 @@ export const johnRouter = createRouter({
       };
     }),
 
-  relanceNurturing: publicQuery
+  relanceNurturing: authedQuery
     .input(z.object({ leadId: z.string().uuid() }))
     .mutation(async ({ input }) => {
       return {
@@ -64,7 +64,7 @@ export const johnRouter = createRouter({
       };
     }),
 
-  statsEngagement: publicQuery
+  statsEngagement: authedQuery
     .input(z.object({ periode: z.enum(["7j", "30j", "90j"]).default("30j") }))
     .query(async ({ input }) => {
       return {
