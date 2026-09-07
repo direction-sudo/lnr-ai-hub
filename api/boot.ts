@@ -539,24 +539,6 @@ app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
 export default app;
 
-// ─── Seed télévendeurs par défaut ───
-try {
-  const tvCount = db.prepare("SELECT COUNT(*) as count FROM televendeurs").get();
-  if (tvCount.count === 0) {
-    console.log("[LNR] Seeding televendeurs...");
-    const insertTv = db.prepare(
-      "INSERT INTO televendeurs (nom, email, type, marche, specialite, actif, charge_max) VALUES (?, ?, ?, ?, ?, ?, ?)"
-    );
-    insertTv.run("Marouane Ben Ali", "marouane@lnr-finance.com", "senior", "FR", "B2B", 1, 15);
-    insertTv.run("Yassine Dridi", "yassine@lnr-finance.com", "junior", "TN", "B2C", 1, 20);
-    insertTv.run("Sami Gharbi", "sami@lnr-finance.com", "junior", "TN", "B2C", 1, 20);
-    insertTv.run("Ines Jaziri", "ines@lnr-finance.com", "junior", "TN", "mixte", 1, 18);
-    console.log("[LNR] Televedendeurs seeded successfully!");
-  }
-} catch (err: any) {
-  console.log("[LNR] Televedendeurs seed error (non-fatal):", err.message);
-}
-
 // ─── Start server ───
 const port = parseInt(process.env.PORT || "3000");
 const { serve } = await import("@hono/node-server");
