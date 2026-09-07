@@ -191,8 +191,7 @@ Structure requise :
             { role: "system", content: systemPrompt },
             { role: "user", content: `Rédige une page SEO pour : ${mot}` },
           ], { temperature: 0.7, maxTokens: 2000 });
-
-          const cleanHtml = htmlContent.replace(/^```html
+          const cleanHtml = htmlContent.replace(new RegExp("^```html\\n?"), "").replace(new RegExp("```$"), "").trim();
 
           const mots = cleanHtml.replace(/<[^>]+>/g, " ").split(" ").filter(w => w.length > 0).length;
           const scoreSeo = Math.min(95, 70 + Math.floor(mots / 20));
