@@ -75,8 +75,7 @@ Structure requise :
 
       const textOnly = htmlContent.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       const mots = textOnly.split(" ").filter(w => w.length > 0).length;
-      const occurrences = (htmlContent.toLowerCase().match(new RegExp(motCle.toLowerCase().replace(/[.*+?^${}()|[\]\]/g, "\$&"), "g")) || []).length;
-      const densite = mots > 0 ? ((occurrences / mots) * 100).toFixed(1) : "0";
+      const occurrences = htmlContent.toLowerCase().split(motCle.toLowerCase()).length - 1;
       const scoreSeo = Math.min(95, Math.max(65, 70 + Math.floor(mots / 20) + (occurrences > 2 ? 10 : 0)));
 
       const db = getDb();
