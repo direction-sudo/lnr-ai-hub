@@ -61,7 +61,7 @@ Structure requise :
         throw new Error("Impossible de générer le contenu SEO. Vérifiez votre connexion Kimi.");
       }
 
-      htmlContent = htmlContent.replace(/^```html
+
 ?/, "").replace(/```$/, "").trim();
 
       const titleMatch = htmlContent.match(/<title>([^<]*)<\/title>/i);
