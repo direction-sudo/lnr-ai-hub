@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { authedOrApiKeyQuery, publicQuery } from "./middleware";
+import { authedOrApiKeyQuery, authedOrApiKeyQuery } from "./middleware";
 import { createRouter } from "./middleware";
 import { chatCompletion } from "./ai-service";
 import { env } from "./lib/env";
@@ -8,7 +8,7 @@ import { pagesSeo } from "@db/schema";
 import { eq, desc } from "drizzle-orm";
 
 const router = createRouter({
-  genererPage: publicQuery
+  genererPage: authedOrApiKeyQuery
     .input(
       z.object({
         motCle: z.string().min(3, "Le mot-clé doit contenir au moins 3 caractères"),
@@ -105,7 +105,7 @@ Structure requise :
       };
     }),
 
-  listerPages: publicQuery
+  listerPages: authedOrApiKeyQuery
     .input(z.object({ statut: z.enum(["brouillon", "en_attente_validation", "valide", "publie"]).optional() }).optional())
     .query(async ({ input }) => {
       const db = getDb();
@@ -116,7 +116,7 @@ Structure requise :
       return query;
     }),
 
-  validerPage: publicQuery
+  validerPage: authedOrApiKeyQuery
     .input(z.object({ id: z.number(), statut: z.enum(["valide", "publie", "brouillon"]) }))
     .mutation(async ({ input }) => {
       const db = getDb();
@@ -126,7 +126,7 @@ Structure requise :
       return { success: true, message: "Page mise à jour." };
     }),
 
-  auditerSite: publicQuery
+  auditerSite: authedOrApiKeyQuery
     .input(z.object({ url: z.string().url("URL invalide") }))
     .query(async ({ input }) => {
       const { url } = input;
@@ -159,7 +159,7 @@ Structure requise :
       return { url, scoreGlobal, erreurs, recommandations: recommandations.slice(0, 3 + (urlHash % 3)) };
     }),
 
-  positionnement: publicQuery
+  positionnement: authedOrApiKeyQuery
     .input(z.object({ motCle: z.string().min(2, "Mot-clé trop court") }))
     .query(async ({ input }) => {
       const { motCle } = input;
@@ -174,7 +174,7 @@ Structure requise :
       };
     }),
 
-  batchGenerate: publicQuery
+  batchGenerate: authedOrApiKeyQuery
     .input(z.object({ motsCles: z.array(z.string().min(3)).min(1).max(10, "Maximum 10 mots-clés par batch") }))
     .mutation(async ({ input, ctx }) => {
       const { motsCles } = input;
