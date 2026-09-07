@@ -66,7 +66,7 @@ Structure requise :
       const titleMatch = htmlContent.match(/<title>([^<]*)<\/title>/i);
       const h1Match = htmlContent.match(/<h1[^>]*>([^<]*)<\/h1>/i);
       const metaDescMatch = htmlContent.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["'][^>]*>/i)
-        || htmlContent.match(/<!--\s*Meta-description:\s*([^
+
 ]*)-->/i);
 
       const metaTitle = titleMatch?.[1] || h1Match?.[1] || motCle;
