@@ -198,9 +198,9 @@ function GenerateurTab() {
 
           <div className="mt-4">
             <p className="text-[10px] text-[#52525B] uppercase tracking-wider mb-2">Aperçu HTML</p>
-            <pre className="bg-[#0d0d0f] rounded-xl p-4 border border-white/[0.04] text-[11px] text-[#A1A1AA] overflow-x-auto max-h-64 overflow-y-auto font-mono leading-relaxed">
-              {generer.data.html}
-            </pre>
+<div className="bg-[#0d0d0f] rounded-xl p-4 border border-white/[0.04] text-[11px] text-[#A1A1AA] overflow-x-auto max-h-64 overflow-y-auto font-mono leading-relaxed">
+  {generer.data.html.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+</div>
           </div>
         </div>
       )}
