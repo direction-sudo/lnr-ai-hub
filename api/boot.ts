@@ -430,7 +430,7 @@ app.post("/api/lead", async (c) => {
     }
 
     const db = getDb();
-    await db.insert(leads).values({
+    const inserted = await db.insert(leads).values({
       name,
       email,
       phone: phone || null,
@@ -438,7 +438,83 @@ app.post("/api/lead", async (c) => {
       message: message || null,
       source: "landing_page",
       status: "new",
-    });
+    }).returning();
+
+    const leadId = "lead-" + inserted[0].id;
+
+    // ─── Distribution auto via Sam ───
+    try {
+      const isFrance = email.endsWith(".fr") || (message || "").toLowerCase().includes("france");
+      const marche = isFrance ? "FR" : "TN";
+      const type = company ? "B2B" : "B2C";
+      let score = 50;
+      if (company) score += 15;
+      if (message && message.length > 50) score += 10;
+
+      const tvs = await db.select().from(televendeurs)
+        .where(and(eq(televendeurs.actif, true), eq(televendeurs.marche, marche)));
+
+      let assigned = null;
+      let priorite = "moyenne";
+      let action = "appel_journee";
+      let delai = "24h";
+
+      if (score < 40) {
+        action = "email_nurturing";
+        delai = "7j";
+        priorite = "basse";
+      } else if (type === "B2B" && marche === "FR") {
+        const senior = tvs.find(t => t.type === "senior");
+        assigned = senior || tvs[0] || null;
+        action = score >= 75 ? "appel_immediat" : "appel_journee";
+        delai = score >= 75 ? "2h" : "24h";
+        priorite = score >= 75 ? "haute" : "moyenne";
+      } else if (type === "B2C" && marche === "TN") {
+        const juniors = tvs.filter(t => t.type === "junior");
+        if (juniors.length > 0) {
+          const loads = await Promise.all(
+            juniors.map(async t => {
+              const c = await db.select({ count: sql`count(*)` })
+                .from(leadsDistribues)
+                .where(and(eq(leadsDistribues.televendeurId, t.id), eq(leadsDistribues.statut, "assigne")));
+              return { tv: t, load: Number(c[0]?.count || 0) };
+            })
+          );
+          loads.sort((a, b) => a.load - b.load);
+          assigned = loads[0]?.tv || null;
+        } else {
+          assigned = tvs[0] || null;
+        }
+        action = score >= 75 ? "appel_immediat" : "appel_journee";
+        delai = score >= 75 ? "2h" : "24h";
+        priorite = score >= 75 ? "haute" : "moyenne";
+      } else {
+        assigned = tvs[0] || null;
+        action = score >= 75 ? "appel_immediat" : "appel_journee";
+        delai = score >= 75 ? "2h" : "24h";
+        priorite = score >= 75 ? "haute" : score >= 40 ? "moyenne" : "basse";
+      }
+
+      await db.insert(leadsDistribues).values({
+        leadId,
+        nom: name,
+        email,
+        score,
+        type,
+        marche,
+        besoins: message || null,
+        televendeurId: assigned?.id || null,
+        priorite,
+        action,
+        delai,
+        statut: assigned ? "assigne" : "en_attente",
+        assignedAt: assigned ? new Date() : null,
+      });
+
+      console.log(`[Sam Auto] Lead ${leadId} -> ${assigned?.nom || "en attente"} (${marche}/${type}, score ${score})`);
+    } catch (distErr) {
+      console.error("[Sam Auto] Distribution failed:", distErr);
+    }
 
     return c.json({ success: true, message: "Merci ! Votre demande a bien été enregistrée." });
   } catch (err: any) {
@@ -462,6 +538,24 @@ app.get("/api/leads", async (c) => {
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
 export default app;
+
+// ─── Seed télévendeurs par défaut ───
+try {
+  const tvCount = db.prepare("SELECT COUNT(*) as count FROM televendeurs").get();
+  if (tvCount.count === 0) {
+    console.log("[LNR] Seeding televendeurs...");
+    const insertTv = db.prepare(
+      "INSERT INTO televendeurs (nom, email, type, marche, specialite, actif, charge_max) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    );
+    insertTv.run("Marouane Ben Ali", "marouane@lnr-finance.com", "senior", "FR", "B2B", 1, 15);
+    insertTv.run("Yassine Dridi", "yassine@lnr-finance.com", "junior", "TN", "B2C", 1, 20);
+    insertTv.run("Sami Gharbi", "sami@lnr-finance.com", "junior", "TN", "B2C", 1, 20);
+    insertTv.run("Ines Jaziri", "ines@lnr-finance.com", "junior", "TN", "mixte", 1, 18);
+    console.log("[LNR] Televedendeurs seeded successfully!");
+  }
+} catch (err: any) {
+  console.log("[LNR] Televedendeurs seed error (non-fatal):", err.message);
+}
 
 // ─── Start server ───
 const port = parseInt(process.env.PORT || "3000");
