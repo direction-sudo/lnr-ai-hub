@@ -233,18 +233,6 @@ export const dossierDocuments = sqliteTable("dossier_documents", {
   validatedAt: integer("validated_at", { mode: "timestamp" }),
 });
 
-// ─── Televendeurs ───
-export const televendeurs = sqliteTable("televendeurs", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email"),
-  status: text("status", { enum: ["online", "offline", "en_appel", "pause"] }).default("offline"),
-  callsToday: integer("calls_today").default(0),
-  avgCallDuration: integer("avg_call_duration").default(0),
-  conversionRate: integer("conversion_rate").default(0),
-  lastActivityAt: integer("last_activity_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
-  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
-});
 
 // ─── Call Records ───
 export const callRecords = sqliteTable("call_records", {
