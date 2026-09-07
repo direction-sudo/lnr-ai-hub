@@ -274,3 +274,57 @@ export const leads = sqliteTable("leads", {
   status: text("status", { enum: ["new", "contacted", "qualified", "converted", "lost"] }).default("new"),
   createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
+
+
+// ─── SEO Pages (Lou) ───
+export const pagesSeo = sqliteTable("pages_seo", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  motCle: text("mot_cle").notNull(),
+  cible: text("cible", { enum: ["B2C", "B2B", "mixte"] }).notNull(),
+  localisation: text("localisation").notNull(),
+  html: text("html").notNull(),
+  metaTitle: text("meta_title"),
+  metaDescription: text("meta_description"),
+  metaH1: text("meta_h1"),
+  scoreSeo: integer("score_seo"),
+  mots: integer("mots"),
+  densiteMotCle: text("densite_mot_cle"),
+  statut: text("statut", { enum: ["brouillon", "en_attente_validation", "valide", "publie"] }).default("brouillon"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+// ─── Télévendeurs (Sam) ───
+export const televendeurs = sqliteTable("televendeurs", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  nom: text("nom").notNull(),
+  email: text("email"),
+  type: text("type", { enum: ["senior", "junior"] }).notNull().default("junior"),
+  marche: text("marche", { enum: ["FR", "TN"] }).notNull(),
+  specialite: text("specialite", { enum: ["B2B", "B2C", "mixte"] }).notNull().default("mixte"),
+  actif: integer("actif", { mode: "boolean" }).notNull().default(true),
+  chargeMax: integer("charge_max").default(20),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
+
+// ─── Leads Distribués (Sam) ───
+export const leadsDistribues = sqliteTable("leads_distribues", {
+  id: integer("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+  leadId: text("lead_id").notNull(),
+  nom: text("nom"),
+  email: text("email"),
+  score: integer("score").default(0),
+  type: text("type", { enum: ["B2B", "B2C"] }).default("B2C"),
+  marche: text("marche", { enum: ["FR", "TN"] }).default("TN"),
+  besoins: text("besoins"),
+  televendeurId: integer("televendeur_id"),
+  priorite: text("priorite", { enum: ["haute", "moyenne", "basse"] }).default("moyenne"),
+  action: text("action", { enum: ["appel_immediat", "appel_journee", "email_nurturing", "rappel_7j"] }).default("appel_journee"),
+  delai: text("delai").default("24h"),
+  statut: text("statut", { enum: ["nouveau", "assigne", "contacte", "qualifie", "converti", "perdu", "en_attente"] }).default("nouveau"),
+  assignedAt: integer("assigned_at", { mode: "timestamp" }),
+  contactedAt: integer("contacted_at", { mode: "timestamp" }),
+  notes: text("notes"),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+});
