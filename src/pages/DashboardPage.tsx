@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import {
+  Shield, useState } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router';
 import {
   Home, Bot, MessageSquare, Plus, Search,
@@ -15,6 +16,7 @@ import IntegrationsPage from './IntegrationsPage';
 import CampaignsPage from './CampaignsPage';
 import AdminDBPage from './AdminDBPage';
 import RHPage from './RHPage';
+import JuliaPage from './JuliaPage';
 import LouPage from './LouPage';
 import SamPage from './SamPage';
 
@@ -39,6 +41,7 @@ function Sidebar({ mobileOpen, onClose, onOpenApiKey }: { mobileOpen: boolean; o
     { path: '/dashboard/agents', label: 'Mes Agents', icon: Bot },
     { path: '/dashboard/lou', label: 'Agent SEO (Lou)', icon: Search },
     { path: '/dashboard/sam', label: 'Distribution (Sam)', icon: RouteIcon },
+    { path: '/dashboard/julia', label: 'Conformite (Julia)', icon: Shield },
     { path: '/dashboard/rh', label: 'Espace RH', icon: Users },
     { path: '/dashboard/campaigns', label: 'Campagnes', icon: Megaphone },
     { path: '/dashboard/integrations', label: 'Intégrations', icon: Link2 },
@@ -514,6 +517,7 @@ export default function DashboardPage() {
             <Route path="/create" element={<CreateAgentView />} />
             <Route path="/admin/db" element={<AdminDBPage />} />
             <Route path="/lou" element={<LouPage />} />
+            <Route path="/julia" element={<JuliaPage />} />
             <Route path="/sam" element={<SamPage />} />
           </Routes>
         </main>
