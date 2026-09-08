@@ -27,7 +27,22 @@ function getBaseUrl() {
 }
 
 // ─── Offline mock store for mutations ───
-let mockAgents = [...MOCK_AGENTS];
+let mockAgents = [...MOCK_AGENTS, {
+  id: 3,
+  slug: "charly",
+  name: "Charly",
+  role: "Agent Orchestrateur de Direction",
+  description: "Le cerveau du système. Rapports de direction 8h00, alertes temps réel et coordination de la flotte d'agents.",
+  avatar: "./images/avatar-placeholder-3.png",
+  systemPrompt: "Tu es Charly, l'orchestrateur de direction de LNR Finance.",
+  capabilities: ["Rapports de direction", "Alertes temps réel", "Pilotage KPIs", "Coordination agents"],
+  tools: ["WhatsApp", "Gmail", "Google Sheets", "Pipedrive"],
+  personality: "Calme, factuel, direct",
+  aiModel: "kimi-latest",
+  isDefault: "true",
+  status: "active",
+  createdAt: new Date(),
+}];
 let mockMessages: Record<number, Array<{ id: number; agentId: number; role: "user" | "agent"; content: string; createdAt: Date }>> = {
   1: [{ id: 1, agentId: 1, role: "agent" as const, content: "Bonjour ! Je suis Nora, votre agent de communication. Comment puis-je vous aider aujourd'hui ?", createdAt: new Date() }],
   2: [{ id: 2, agentId: 2, role: "agent" as const, content: "Bonjour ! Je suis Leo, votre agent RH. Prêt à optimiser vos processus recrutement ?", createdAt: new Date() }],
@@ -461,6 +476,47 @@ Je suis là pour vous aider ! 💼`;
                   ];
                 } else if (path.startsWith("rh.")) {
                   data = { success: true, id: ++nextId };
+                }
+                // ─── Charly (Orchestrateur) ───
+                else if (path === "charly.kpiTempsReel") {
+                  data = {
+                    timestamp: new Date().toISOString(),
+                    agentsActifs: 10,
+                    appelsEnCours: 3,
+                    leadsAujourdhui: 12,
+                    rdvAujourdhui: 5,
+                    tauxConversionGlobal: 8.2,
+                    alertesActives: 2,
+                  };
+                } else if (path === "charly.alertesActives") {
+                  data = [
+                    { id: 1, type: "transfert", agent: "Tom", message: "Taux de transfert 18% — seuil 15%", priorite: "moyenne", heure: "09:15" },
+                    { id: 2, type: "file_attente", agent: "Plateau", message: "File d'attente 4 appels", priorite: "faible", heure: "10:30" },
+                  ];
+                } else if (path === "charly.tableauAgents") {
+                  data = [
+                    { id: "charly", nom: "Charly", statut: "online", taches: "Rapport 8h", derniereActivite: "08:00" },
+                    { id: "sam", nom: "Sam", statut: "online", taches: "Distribution leads", derniereActivite: "08:05" },
+                    { id: "tom", nom: "Tom", statut: "online", taches: "Appels entrants", derniereActivite: "08:02" },
+                    { id: "rony", nom: "Rony", statut: "online", taches: "Pointage", derniereActivite: "08:00" },
+                    { id: "john", nom: "John", statut: "online", taches: "Posts LinkedIn", derniereActivite: "07:45" },
+                    { id: "lou", nom: "Lou", statut: "online", taches: "Audit SEO", derniereActivite: "07:30" },
+                    { id: "patrimoine", nom: "FIDES Patrimoine", statut: "online", taches: "Qualification leads", derniereActivite: "08:10" },
+                    { id: "julia", nom: "Julia", statut: "online", taches: "Conformite KYC", derniereActivite: "08:08" },
+                    { id: "manue", nom: "Manue", statut: "online", taches: "Supervision plateau", derniereActivite: "08:00" },
+                    { id: "nora", nom: "Nora", statut: "online", taches: "Formation recrues", derniereActivite: "07:50" },
+                  ];
+                } else if (path === "charly.rapportQuotidien") {
+                  const d = new Date();
+                  data = {
+                    date: d.toISOString(),
+                    presence: { presents: 7, absents: 0, retards: 1 },
+                    leads: { nouveaux: 12, qualifies: 8, rdvPris: 5, convertis: 2 },
+                    appels: { total: 145, decroches: 89, tauxDecroche: 61, dureeMoyenne: 185 },
+                    incidents: [],
+                    kpi: { tauxConversion: 8.2, tauxTransfert: 12, fileAttenteMax: 3 },
+                    message: `Rapport du ${d.toLocaleDateString("fr-FR")} — 7/7 presents, 12 leads, 5 RDV, 2 ventes.`,
+                  };
                 }
                 // ─── Admin ───
                 else if (path === "admin.stats") {

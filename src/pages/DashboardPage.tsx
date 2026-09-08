@@ -8,7 +8,8 @@ import {
   Database,
   Route as RouteIcon,
   Shield,
-  Headphones
+  Headphones,
+  Crown
 } from 'lucide-react';
 import ApiKeyModal from '@/components/ApiKeyModal';
 import { useChat } from '@/hooks/useChat';
@@ -21,6 +22,7 @@ import JuliaPage from './JuliaPage';
 import ManuePage from './ManuePage';
 import LouPage from './LouPage';
 import SamPage from './SamPage';
+import CharlyPage from './CharlyPage';
 
 const ALL_AVATARS = [
   './images/avatar-nora.png',
@@ -40,6 +42,7 @@ function Sidebar({ mobileOpen, onClose, onOpenApiKey }: { mobileOpen: boolean; o
 
   const navItems = [
     { path: '/dashboard', label: 'Accueil', icon: Home },
+    { path: '/dashboard/charly', label: 'Cockpit (Charly)', icon: Crown },
     { path: '/dashboard/agents', label: 'Mes Agents', icon: Bot },
     { path: '/dashboard/lou', label: 'Agent SEO (Lou)', icon: Search },
     { path: '/dashboard/sam', label: 'Distribution (Sam)', icon: RouteIcon },
@@ -523,6 +526,7 @@ export default function DashboardPage() {
             <Route path="/julia" element={<JuliaPage />} />
             <Route path="/manue" element={<ManuePage />} />
             <Route path="/sam" element={<SamPage />} />
+            <Route path="/charly" element={<CharlyPage />} />
           </Routes>
         </main>
       </div>
