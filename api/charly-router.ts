@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { createRouter, authedQuery, authedQuery } from "./middleware";
+import { createRouter, authedQuery } from "./middleware";
 
 export const charlyRouter = createRouter({
   rapportQuotidien: authedQuery
-    .query(async () => {
-      const today = new Date();
+    .input(z.object({ date: z.string().optional() }).optional())
+    .query(async ({ input }) => {
+      const today = input?.date ? new Date(input.date) : new Date();
       return {
         date: today.toISOString(),
         presence: { presents: 7, absents: 0, retards: 1 },
