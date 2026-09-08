@@ -6,7 +6,8 @@ import {
   Users, Instagram, PenTool, Target, BarChart3,
   Menu, ChevronRight, Link2, Key, Megaphone,
   Database,
-  Route as RouteIcon
+  Route as RouteIcon,
+  Shield
 } from 'lucide-react';
 import ApiKeyModal from '@/components/ApiKeyModal';
 import { useChat } from '@/hooks/useChat';
