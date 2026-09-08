@@ -1,5 +1,4 @@
-import {
-  Shield, useState } from 'react';
+import { useState } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router';
 import {
   Home, Bot, MessageSquare, Plus, Search,
