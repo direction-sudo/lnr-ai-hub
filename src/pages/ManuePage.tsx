@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import {
-  Headphones, Users, TrendingUp, AlertTriangle, MessageSquare,
-  ChevronLeft, Loader2, CheckCircle, Clock, Phone, Target,
-  BarChart3, Activity, Zap, UserCheck, Timer
+  Headphones, Users, BarChart3, AlertTriangle, MessageSquare,
+  ChevronLeft, Loader2, CheckCircle, Clock, TrendingUp,
+  Phone, PhoneOff, Target, Zap, Activity, UserCheck
 } from 'lucide-react';
 import { trpc } from '@/providers/trpc';
 
 type Tab = 'plateau' | 'performance' | 'alertes' | 'coaching';
 
 const TABS: { id: Tab; label: string; icon: typeof Headphones }[] = [
-  { id: 'plateau', label: 'Plateau temps reel', icon: Activity },
+  { id: 'plateau', label: 'Plateau', icon: Users },
   { id: 'performance', label: 'Performance', icon: BarChart3 },
   { id: 'alertes', label: 'Alertes', icon: AlertTriangle },
   { id: 'coaching', label: 'Coaching', icon: MessageSquare },
@@ -49,7 +49,7 @@ export default function ManuePage() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-[#FAFAFA]">Manue</h1>
-            <p className="text-xs text-[#52525B]">Superviseuse Plateau Telephonique</p>
+            <p className="text-xs text-[#52525B]">Agent Supervision des televendeurs</p>
           </div>
         </div>
       </div>
@@ -80,7 +80,7 @@ export default function ManuePage() {
   );
 }
 
-/* ─── PLATEAU TEMPS RÉEL ─── */
+/* ─── PLATEAU ─── */
 function PlateauTab() {
   const team = trpc.manue.teamStatus.useQuery();
 
@@ -88,50 +88,59 @@ function PlateauTab() {
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="glass-card p-6">
         <h2 className="text-lg font-bold text-[#FAFAFA] mb-1 flex items-center gap-2">
-          <Activity size={18} className="text-[#D4A853]" /> Etat du plateau
+          <Users size={18} className="text-[#D4A853]" /> Etat du plateau
         </h2>
-        <p className="text-sm text-[#52525B] mb-6">Vue temps reel de l equipe de televendeurs.</p>
+        <p className="text-sm text-[#52525B] mb-6">Supervision temps reel des televendeurs.</p>
 
         {team.isLoading ? (
           <div className="flex items-center justify-center py-10">
             <Loader2 size={24} className="animate-spin text-[#D4A853]" />
           </div>
-        ) : team.data ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {team.data.map((member: any) => (
-              <div key={member.id} className="bg-[#0d0d0f] rounded-xl p-4 border border-white/[0.04]">
-                <div className="flex items-center justify-between mb-3">
+        ) : team.data && team.data.length > 0 ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {team.data.map((t: any) => (
+              <div key={t.id} className="bg-[#0d0d0f] rounded-xl p-5 border border-white/[0.04]">
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={"w-9 h-9 rounded-lg flex items-center justify-center border " + (STATUS_COLORS[member.statut] || STATUS_COLORS.offline)}>
-                      <UserCheck size={16} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-[#FAFAFA]">{member.nom}</p>
-                      <p className="text-[10px] text-[#52525B]">{STATUS_LABELS[member.statut] || member.statut}</p>
-                    </div>
+                    <div className={"w-3 h-3 rounded-full " + (
+                      t.statut === 'online' ? 'bg-[#22C55E]' :
+                      t.statut === 'en_appel' ? 'bg-[#D4A853]' :
+                      t.statut === 'pause' ? 'bg-[#3498db]' : 'bg-[#52525B]'
+                    )} />
+                    <span className="text-sm font-bold text-[#FAFAFA]">{t.nom}</span>
                   </div>
-                  <span className={"text-[10px] px-2 py-0.5 rounded-full border " + (STATUS_COLORS[member.statut] || STATUS_COLORS.offline)}>
-                    {member.appelsAujourdhui} appels
+                  <span className={"text-[10px] px-2 py-0.5 rounded-full border " + (STATUS_COLORS[t.statut] || STATUS_COLORS.offline)}>
+                    {STATUS_LABELS[t.statut] || t.statut}
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-center">
+
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-xs font-bold text-[#FAFAFA]">{member.dureeMoyenne}s</p>
-                    <p className="text-[10px] text-[#52525B]">Duree moy.</p>
+                    <p className="text-[10px] text-[#52525B] uppercase tracking-wider">Appels/jour</p>
+                    <p className="text-lg font-bold text-[#FAFAFA]">{t.appelsAujourdhui}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-[#D4A853]">{member.tauxConversion}%</p>
-                    <p className="text-[10px] text-[#52525B]">Conversion</p>
+                    <p className="text-[10px] text-[#52525B] uppercase tracking-wider">Duree moy.</p>
+                    <p className="text-lg font-bold text-[#FAFAFA]">{t.dureeMoyenne}s</p>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-[#FAFAFA]">{member.derniereActivite ? new Date(member.derniereActivite).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '-'}</p>
-                    <p className="text-[10px] text-[#52525B]">Dern. act.</p>
+                    <p className="text-[10px] text-[#52525B] uppercase tracking-wider">Conversion</p>
+                    <p className="text-lg font-bold text-[#D4A853]">{t.tauxConversion}%</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-[#52525B] uppercase tracking-wider">Derniere act.</p>
+                    <p className="text-xs text-[#A1A1AA]">{t.derniereActivite ? new Date(t.derniereActivite).toLocaleTimeString('fr-FR') : '-'}</p>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        ) : null}
+        ) : (
+          <div className="text-center py-10">
+            <Users size={32} className="text-[#52525B] mx-auto mb-3" />
+            <p className="text-sm text-[#52525B]">Aucun televendeur actif.</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -140,7 +149,7 @@ function PlateauTab() {
 /* ─── PERFORMANCE ─── */
 function PerformanceTab() {
   const [teleId, setTeleId] = useState('');
-  const performance = trpc.manue.performance.useQuery(
+  const perf = trpc.manue.performance.useQuery(
     { televendeurId: teleId },
     { enabled: !!teleId }
   );
@@ -158,46 +167,53 @@ function PerformanceTab() {
             onChange={e => setTeleId(e.target.value)}
             placeholder="ID televendeur (UUID)"
             className="flex-1 h-11 bg-[#0d0d0f] border border-white/[0.06] rounded-xl px-4 text-sm text-[#FAFAFA] placeholder:text-[#3F3F46] focus:outline-none focus:border-[#D4A853]/30 transition-all" />
-          <button onClick={() => performance.refetch()} disabled={!teleId || performance.isFetching}
+          <button onClick={() => perf.refetch()} disabled={!teleId || perf.isFetching}
             className="btn-gold text-sm px-5 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-50">
-            {performance.isFetching ? <><Loader2 size={15} className="animate-spin" /> Analyse...</>
+            {perf.isFetching ? <><Loader2 size={15} className="animate-spin" /> Analyse...</>
               : <><Target size={15} /> Analyser</>}
           </button>
         </div>
 
-        {performance.data && (
+        {perf.data && (
           <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <div className="bg-[#0d0d0f] rounded-xl p-4 border border-white/[0.04] text-center">
                 <p className="text-[10px] text-[#52525B] uppercase tracking-wider mb-1">Total appels</p>
-                <p className="text-3xl font-bold text-[#FAFAFA]">{performance.data.kpi.totalAppels}</p>
+                <p className="text-3xl font-bold text-[#FAFAFA]">{perf.data.kpi.totalAppels}</p>
               </div>
               <div className="bg-[#0d0d0f] rounded-xl p-4 border border-white/[0.04] text-center">
-                <p className="text-[10px] text-[#52525B] uppercase tracking-wider mb-1">Taux decroche</p>
-                <p className="text-3xl font-bold text-[#D4A853]">{performance.data.kpi.tauxDecroche}%</p>
+                <p className="text-[10px] text-[#52525B] uppercase tracking-wider mb-1">Decroche</p>
+                <p className="text-3xl font-bold text-[#22C55E]">{perf.data.kpi.tauxDecroche}%</p>
               </div>
               <div className="bg-[#0d0d0f] rounded-xl p-4 border border-white/[0.04] text-center">
                 <p className="text-[10px] text-[#52525B] uppercase tracking-wider mb-1">Duree moy.</p>
-                <p className="text-3xl font-bold text-[#FAFAFA]">{performance.data.kpi.dureeMoyenne}s</p>
+                <p className="text-3xl font-bold text-[#D4A853]">{perf.data.kpi.dureeMoyenne}s</p>
               </div>
               <div className="bg-[#0d0d0f] rounded-xl p-4 border border-white/[0.04] text-center">
-                <p className="text-[10px] text-[#52525B] uppercase tracking-wider mb-1">Conversion</p>
-                <p className="text-3xl font-bold text-[#22C55E]">{performance.data.kpi.tauxConversion}%</p>
+                <p className="text-[10px] text-[#52525B] uppercase tracking-wider mb-1">RDV pris</p>
+                <p className="text-3xl font-bold text-[#FAFAFA]">{perf.data.kpi.rdvPris}</p>
               </div>
             </div>
 
             <div>
-              <p className="text-[10px] text-[#52525B] uppercase tracking-wider mb-2">Historique recent</p>
+              <p className="text-[10px] text-[#52525B] uppercase tracking-wider mb-2">Historique des appels</p>
               <div className="space-y-2">
-                {performance.data.historique.map((call: any, i: number) => (
+                {perf.data.historique.map((call: any, i: number) => (
                   <div key={i} className="flex items-center justify-between bg-[#0d0d0f] rounded-xl p-3 border border-white/[0.04]">
                     <div className="flex items-center gap-3">
-                      <Phone size={14} className={call.status === 'answered' ? 'text-[#22C55E]' : 'text-[#e74c3c]'} />
-                      <span className="text-sm text-[#FAFAFA]">{call.duration ?? 0}s</span>
+                      {call.status === 'answered' ? (
+                        <Phone size={14} className="text-[#22C55E]" />
+                      ) : (
+                        <PhoneOff size={14} className="text-[#e74c3c]" />
+                      )}
+                      <span className="text-xs text-[#A1A1AA]">{call.phoneNumber}</span>
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.15)]">
-                      {call.rdvBooked ? 'RDV pris' : call.status}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-[#52525B]">{call.duration}s</span>
+                      {call.rdvBooked && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[rgba(34,197,94,0.08)] text-[#22C55E] border border-[rgba(34,197,94,0.15)]">RDV</span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -212,48 +228,66 @@ function PerformanceTab() {
 /* ─── ALERTES ─── */
 function AlertesTab() {
   const [type, setType] = useState<'appels_bas' | 'conversion_bas' | 'absence' | 'file_attente'>('appels_bas');
+  const [seuil, setSeuil] = useState(10);
   const alerte = trpc.manue.alerte.useMutation();
 
-  const handleAlerte = () => {
-    alerte.mutate({ type });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    alerte.mutate({ type, seuil });
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
       <div className="glass-card p-6">
         <h2 className="text-lg font-bold text-[#FAFAFA] mb-1 flex items-center gap-2">
-          <AlertTriangle size={18} className="text-[#D4A853]" /> Declencher une alerte
+          <AlertTriangle size={18} className="text-[#D4A853]" /> Creer une alerte
         </h2>
-        <p className="text-sm text-[#52525B] mb-6">Signalez un probleme sur le plateau.</p>
+        <p className="text-sm text-[#52525B] mb-6">Declenchez une alerte de supervision automatique.</p>
 
-        <div className="flex gap-3 mb-4">
-          <select value={type} onChange={e => setType(e.target.value as any)}
-            className="flex-1 h-11 bg-[#0d0d0f] border border-white/[0.06] rounded-xl px-4 text-sm text-[#FAFAFA] focus:outline-none focus:border-[#D4A853]/30 transition-all">
-            <option value="appels_bas">Taux d appels bas</option>
-            <option value="conversion_bas">Conversion faible</option>
-            <option value="absence">Absence prolongee</option>
-            <option value="file_attente">File d attente</option>
-          </select>
-          <button onClick={handleAlerte} disabled={alerte.isPending}
-            className="btn-gold text-sm px-5 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-50">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-xs font-medium text-[#A1A1AA] mb-1.5 block">Type d alerte</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(['appels_bas', 'conversion_bas', 'absence', 'file_attente'] as const).map(opt => (
+                <button key={opt} type="button" onClick={() => setType(opt)}
+                  className={"h-10 rounded-xl text-xs font-medium transition-all " + (
+                    type === opt
+                      ? 'bg-[rgba(212,168,83,0.08)] text-[#D4A853] border border-[rgba(212,168,83,0.2)]'
+                      : 'bg-[#0d0d0f] text-[#52525B] border border-white/[0.06] hover:text-[#A1A1AA]'
+                  )}>
+                  {opt === 'appels_bas' ? 'Appels bas' :
+                   opt === 'conversion_bas' ? 'Conversion basse' :
+                   opt === 'absence' ? 'Absence' : 'File d attente'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-[#A1A1AA] mb-1.5 block">Seuil</label>
+            <div className="flex items-center gap-3">
+              <input type="range" min={1} max={50} value={seuil}
+                onChange={e => setSeuil(Number(e.target.value))}
+                className="flex-1 accent-[#D4A853]" />
+              <span className="text-sm font-bold text-[#FAFAFA] w-10 text-right">{seuil}</span>
+            </div>
+          </div>
+
+          <button type="submit" disabled={alerte.isPending}
+            className="btn-gold text-sm px-6 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-50">
             {alerte.isPending ? <><Loader2 size={15} className="animate-spin" /> Envoi...</>
-              : <><Zap size={15} /> Declencher</>}
+              : <><Zap size={15} /> Declencher l alerte</>}
           </button>
-        </div>
+        </form>
 
         {alerte.data && (
-          <div className={"flex items-center gap-3 rounded-xl p-4 border " + (
-            alerte.data.priorite === 'critique' ? 'bg-[rgba(231,76,60,0.08)] border-[rgba(231,76,60,0.15)]' :
-            alerte.data.priorite === 'haute' ? 'bg-[rgba(212,168,83,0.08)] border-[rgba(212,168,83,0.15)]' :
-            'bg-[rgba(52,152,219,0.08)] border-[rgba(52,152,219,0.15)]'
-          )}>
-            <AlertTriangle size={20} className={
-              alerte.data.priorite === 'critique' ? 'text-[#e74c3c]' :
-              alerte.data.priorite === 'haute' ? 'text-[#D4A853]' : 'text-[#3498db]'
-            } />
+          <div className="mt-4 flex items-center gap-3 bg-[#0d0d0f] rounded-xl p-4 border border-white/[0.04]">
+            <AlertTriangle size={18} className={"flex-shrink-0 " + (
+              alerte.data.priorite === 'critique' ? 'text-[#e74c3c]' : 'text-[#D4A853]'
+            )} />
             <div>
-              <p className="text-sm font-bold text-[#FAFAFA]">{alerte.data.message}</p>
-              <p className="text-xs text-[#52525B] capitalize">Priorite: {alerte.data.priorite}</p>
+              <p className="text-sm font-medium text-[#FAFAFA]">{alerte.data.message}</p>
+              <p className="text-xs text-[#52525B]">Priorite: {alerte.data.priorite} — {alerte.data.status}</p>
             </div>
           </div>
         )}
@@ -271,7 +305,7 @@ function CoachingTab() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
       <div className="glass-card p-6">
         <h2 className="text-lg font-bold text-[#FAFAFA] mb-1 flex items-center gap-2">
           <MessageSquare size={18} className="text-[#D4A853]" /> Coaching automatise
@@ -286,27 +320,25 @@ function CoachingTab() {
           <button onClick={() => coaching.refetch()} disabled={!teleId || coaching.isFetching}
             className="btn-gold text-sm px-5 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-50">
             {coaching.isFetching ? <><Loader2 size={15} className="animate-spin" /> Analyse...</>
-              : <><Zap size={15} /> Generer</>}
+              : <><UserCheck size={15} /> Generer le coaching</>}
           </button>
         </div>
 
-        {coaching.data && (
+        {coaching.data && coaching.data.recommandations.length > 0 ? (
           <div className="space-y-3">
-            <div className="flex items-center gap-3 mb-4">
-              <CheckCircle size={20} className="text-[#22C55E]" />
-              <div>
-                <h3 className="text-sm font-bold text-[#FAFAFA]">Recommandations de coaching</h3>
-                <p className="text-xs text-[#52525B]">Televendeur: {coaching.data.televendeurId}</p>
-              </div>
-            </div>
             {coaching.data.recommandations.map((rec: string, i: number) => (
               <div key={i} className="flex items-start gap-3 bg-[#0d0d0f] rounded-xl p-4 border border-white/[0.04]">
-                <Target size={16} className="text-[#D4A853] mt-0.5 flex-shrink-0" />
+                <TrendingUp size={16} className="text-[#D4A853] flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-[#A1A1AA]">{rec}</p>
               </div>
             ))}
           </div>
-        )}
+        ) : coaching.data ? (
+          <div className="text-center py-10">
+            <CheckCircle size={32} className="text-[#22C55E] mx-auto mb-3" />
+            <p className="text-sm text-[#52525B]">Aucune recommandation — performance optimale !</p>
+          </div>
+        ) : null}
       </div>
     </div>
   );
